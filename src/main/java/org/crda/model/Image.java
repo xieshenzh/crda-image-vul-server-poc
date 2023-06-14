@@ -1,4 +1,6 @@
-package org.crda;
+package org.crda.model;
+
+import org.crda.model.Vulnerability;
 
 import java.util.List;
 
