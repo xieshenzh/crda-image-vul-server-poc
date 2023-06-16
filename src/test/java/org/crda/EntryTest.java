@@ -1,4 +1,4 @@
-package org.crda.camel;
+package org.crda;
 
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
@@ -8,7 +8,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 
 @QuarkusTest
-public class RoutesTest {
+public class EntryTest {
 
     @Test
     public void fruits() {

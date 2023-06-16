@@ -1,25 +1,30 @@
-package org.crda.model;
+package org.crda.image.model;
 
-import org.crda.model.Vulnerability;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
 import java.util.List;
 
+@RegisterForReflection
 public class Image {
 
-    private String tag;
+    private String ref;
     private List<Vulnerability> vulnerabilities;
 
-    public Image(String tag, List<Vulnerability> vulnerabilities) {
-        this.tag = tag;
+    public Image() {
+
+    }
+
+    public Image(String ref, List<Vulnerability> vulnerabilities) {
+        this.ref = ref;
         this.vulnerabilities = vulnerabilities;
     }
 
-    public String getTag() {
-        return tag;
+    public String getRef() {
+        return ref;
     }
 
-    public void setTag(String tag) {
-        this.tag = tag;
+    public void setRef(String ref) {
+        this.ref = ref;
     }
 
     public List<Vulnerability> getVulnerabilities() {
