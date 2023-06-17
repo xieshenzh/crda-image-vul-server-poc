@@ -7,7 +7,6 @@ package org.crda.image;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.tooling.model.Strings;
-import org.crda.image.model.ImageRef;
 
 import java.util.Arrays;
 import java.util.regex.Matcher;
@@ -41,15 +40,22 @@ public class ImageRefProcessor implements Processor {
 
     private static final String dockerRegistryLegacy = "index.docker.io";
     private static final String dockerRegistryDNS = "registry-1.docker.io";
-    private static final String dockerRegistry = "docker.io";
     private static final String dockerLibrary = "library";
+
+    public static final String dockerRegistry = "docker.io";
+    public static final String quayRegistry = "quay.io";
+
+    public static final String registryHeader = "registry";
+    public static final String repositoryHeader = "repository";
+    public static final String tagHeader = "tag";
+    public static final String digestHeader = "digest";
 
     @Override
     public void process(Exchange exchange) throws Exception {
         String imageStr = exchange.getIn().getHeader("image", String.class);
 
         Matcher schemeMatcher = schemePattern.matcher(imageStr);
-        if (schemeMatcher.find() || Strings.isNullOrEmpty(schemeMatcher.group("scheme"))) {
+        if (schemeMatcher.find() && !Strings.isNullOrEmpty(schemeMatcher.group("scheme"))) {
             throw new InvalidImageRefException(String.format("Format of image reference %s is not supported", imageStr));
         }
 
@@ -66,13 +72,18 @@ public class ImageRefProcessor implements Processor {
         String tag = refMatcher.group(tagGroup);
         String digest = refMatcher.group(digestGroup);
 
+        if (Strings.isNullOrEmpty(repository)) {
+            throw new InvalidImageRefException(String.format("Image reference %s is not valid", imageStr));
+        }
+
         String[] repoParts = repository.split("/");
-        if (registry.length() == 0 && "localhost".equals(repoParts[0]) && repoParts.length > 1) {
+        System.out.println(repository);
+        if (Strings.isNullOrEmpty(registry) && "localhost".equals(repoParts[0]) && repoParts.length > 1) {
             registry = repoParts[0];
             repository = String.join("/", Arrays.copyOfRange(repoParts, 1, repoParts.length));
         }
 
-        if (registry.length() == 0 || dockerRegistryDNS.equals(registry) || dockerRegistryLegacy.equals(registry)) {
+        if (Strings.isNullOrEmpty(registry) || dockerRegistryDNS.equals(registry) || dockerRegistryLegacy.equals(registry)) {
             registry = dockerRegistry;
         }
 
@@ -80,14 +91,17 @@ public class ImageRefProcessor implements Processor {
             repository = dockerLibrary + "/" + repository;
         }
 
-        if (tag.length() == 0 && digest.length() == 0) {
+        if (Strings.isNullOrEmpty(tag) && Strings.isNullOrEmpty(digest)) {
             tag = "latest";
         }
 
-        if (repository.length() == 0) {
+        if (Strings.isNullOrEmpty(repository)) {
             throw new InvalidImageRefException(String.format("Image reference %s is not valid", imageStr));
         }
 
-        exchange.getIn().setHeader("imageRef", new ImageRef(registry, repository, tag, digest));
+        exchange.getIn().setHeader(registryHeader, registry);
+        exchange.getIn().setHeader(repositoryHeader, repository);
+        exchange.getIn().setHeader(tagHeader, tag);
+        exchange.getIn().setHeader(digestHeader, digest);
     }
 }
