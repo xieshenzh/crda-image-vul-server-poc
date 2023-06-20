@@ -5,12 +5,10 @@ import org.apache.camel.model.dataformat.JsonLibrary;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.model.rest.RestParamType;
 import org.crda.image.ImageRefProcessor;
-import org.crda.image.model.Image;
 
-import java.util.Collections;
-
-import static org.apache.camel.support.builder.PredicateBuilder.or;
-import static org.crda.image.ImageRefProcessor.*;
+import static org.apache.camel.support.builder.PredicateBuilder.and;
+import static org.crda.image.ImageRefProcessor.quayRegistry;
+import static org.crda.image.ImageRefProcessor.registryHeader;
 
 public class Entry extends RouteBuilder {
 
@@ -30,11 +28,12 @@ public class Entry extends RouteBuilder {
                 .to("direct:getVulnerabilities");
 
         from("direct:getVulnerabilities")
-                .toD("exec:regctl?args=manifest get ${header.image}")
-                .setBody(exchange -> {
-                    String image = exchange.getIn().getBody(String.class);
-                    return new Image(image, Collections.emptyList());
-                })
+                .process(new ImageRefProcessor())
+                .choice()
+                .when(header(registryHeader).isEqualTo(quayRegistry))
+                .to("direct:manifest")
+                .otherwise()
+                .to("direct:hello")
                 .end();
 
         from("direct:hello")

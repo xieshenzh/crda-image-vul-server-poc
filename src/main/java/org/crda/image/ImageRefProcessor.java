@@ -77,7 +77,6 @@ public class ImageRefProcessor implements Processor {
         }
 
         String[] repoParts = repository.split("/");
-        System.out.println(repository);
         if (Strings.isNullOrEmpty(registry) && "localhost".equals(repoParts[0]) && repoParts.length > 1) {
             registry = repoParts[0];
             repository = String.join("/", Arrays.copyOfRange(repoParts, 1, repoParts.length));

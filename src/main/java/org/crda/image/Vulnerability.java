@@ -1,4 +1,4 @@
-package org.crda.image.model;
+package org.crda.image;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
