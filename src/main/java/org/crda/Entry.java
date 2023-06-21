@@ -6,9 +6,8 @@ import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.model.rest.RestParamType;
 import org.crda.image.ImageRefProcessor;
 
-import static org.apache.camel.support.builder.PredicateBuilder.and;
-import static org.crda.image.ImageRefProcessor.quayRegistry;
-import static org.crda.image.ImageRefProcessor.registryHeader;
+import static org.crda.image.Constants.quayRegistry;
+import static org.crda.image.Constants.registryHeader;
 
 public class Entry extends RouteBuilder {
 
@@ -31,7 +30,7 @@ public class Entry extends RouteBuilder {
                 .process(new ImageRefProcessor())
                 .choice()
                 .when(header(registryHeader).isEqualTo(quayRegistry))
-                .to("direct:manifest")
+                .to("direct:manifest").to("direct:quay-vulnerabilities")
                 .otherwise()
                 .to("direct:hello")
                 .end();

@@ -1,20 +1,19 @@
 package org.crda.manifest;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 import java.util.Map;
 
 @RegisterForReflection
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Descriptor {
 
     private String mediaType;
     private long size;
     private String digest;
-    private String[] urls;
     private Map<String, String> annotations;
-    private byte[] data;
     private Platform platform;
-    private String artifactType;
 
     public Descriptor() {
     }
@@ -43,14 +42,6 @@ public class Descriptor {
         this.digest = digest;
     }
 
-    public String[] getUrls() {
-        return urls;
-    }
-
-    public void setUrls(String[] urls) {
-        this.urls = urls;
-    }
-
     public Map<String, String> getAnnotations() {
         return annotations;
     }
@@ -59,27 +50,11 @@ public class Descriptor {
         this.annotations = annotations;
     }
 
-    public byte[] getData() {
-        return data;
-    }
-
-    public void setData(byte[] data) {
-        this.data = data;
-    }
-
     public Platform getPlatform() {
         return platform;
     }
 
     public void setPlatform(Platform platform) {
         this.platform = platform;
-    }
-
-    public String getArtifactType() {
-        return artifactType;
-    }
-
-    public void setArtifactType(String artifactType) {
-        this.artifactType = artifactType;
     }
 }

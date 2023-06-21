@@ -1,15 +1,16 @@
 package org.crda.manifest;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 @RegisterForReflection
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Manifest {
 
     private String mediaType;
     private String schemaVersion;
-    private String[] signatures;
     private Descriptor[] manifests;
-    private Descriptor[] layers;
+    private Descriptor config;
 
     public Manifest() {
     }
@@ -30,14 +31,6 @@ public class Manifest {
         this.schemaVersion = schemaVersion;
     }
 
-    public String[] getSignatures() {
-        return signatures;
-    }
-
-    public void setSignatures(String[] signatures) {
-        this.signatures = signatures;
-    }
-
     public Descriptor[] getManifests() {
         return manifests;
     }
@@ -46,11 +39,11 @@ public class Manifest {
         this.manifests = manifests;
     }
 
-    public Descriptor[] getLayers() {
-        return layers;
+    public Descriptor getConfig() {
+        return config;
     }
 
-    public void setLayers(Descriptor[] layers) {
-        this.layers = layers;
+    public void setConfig(Descriptor config) {
+        this.config = config;
     }
 }

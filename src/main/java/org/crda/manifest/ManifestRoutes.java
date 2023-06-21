@@ -1,9 +1,11 @@
 package org.crda.manifest;
 
 import org.apache.camel.builder.RouteBuilder;
-import org.crda.image.Image;
+import org.apache.camel.model.dataformat.JsonLibrary;
 
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.apache.camel.support.builder.PredicateBuilder.and;
 
@@ -20,27 +22,29 @@ public class ManifestRoutes extends RouteBuilder {
                 .to("direct:manifest-platform")
                 .otherwise()
                 .to("direct:manifest-all")
+                .end()
+                .choice()
+                .when(body().isNull())
+                .to("direct:manifest-header")
                 .end();
 
         from("direct:manifest-all")
-                .toD("exec:regctl?args=manifest get ${header.image}")
-                .to("direct:manifest-result");
+                .toD("exec:regctl?args=manifest get --format raw-body ${header.image}")
+                .to("direct:manifest-digests");
 
         from("direct:manifest-platform")
-                .toD("exec:regctl?args=manifest get -p ${header.platform} ${header.image}")
-                .to("direct:manifest-result");
+                .toD("exec:regctl?args=manifest get -p ${header.platform} --format raw-body ${header.image}")
+                .to("direct:manifest-digests-body");
 
-        from("direct:manifest-result")
+        from("direct:manifest-digests-body")
+                .process(new ManifestClientErrorProcessor())
+                .unmarshal()
+                .json(JsonLibrary.Jackson, Manifest.class)
                 .process(exchange -> {
-                    int exitCode = exchange.getIn().getHeader("CamelExecExitValue", Integer.class);
-                    if (exitCode != 0) {
-                        String errMessage = exchange.getIn().getHeader("CamelExecStdErr", String.class);
-                        throw new ManifestClientException(String.format("regctl error, code: %d, message: %s", exitCode, errMessage));
-                    }
-                })
-                .setBody(exchange -> {
-                    String image = exchange.getIn().getBody(String.class);
-                    return new Image(image, Collections.emptyList());
+                    Manifest manifest = exchange.getIn().getBody(Manifest.class);
+                    Optional.ofNullable(manifest.getManifests()).map(Arrays::<Descriptor>asList)
+                            .ifPresentOrElse(d -> exchange.getIn().setBody(d.stream().map(Descriptor::getDigest).collect(Collectors.toList())),
+                                    () -> exchange.getIn().setBody(null));
                 });
     }
 }

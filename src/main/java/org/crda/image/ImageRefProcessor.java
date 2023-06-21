@@ -12,6 +12,8 @@ import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.crda.image.Constants.*;
+
 public class ImageRefProcessor implements Processor {
 
     private static final String patternRegex = "^(?<scheme>([a-z]+))://(?<ref>(.+))$";
@@ -41,14 +43,6 @@ public class ImageRefProcessor implements Processor {
     private static final String dockerRegistryLegacy = "index.docker.io";
     private static final String dockerRegistryDNS = "registry-1.docker.io";
     private static final String dockerLibrary = "library";
-
-    public static final String dockerRegistry = "docker.io";
-    public static final String quayRegistry = "quay.io";
-
-    public static final String registryHeader = "registry";
-    public static final String repositoryHeader = "repository";
-    public static final String tagHeader = "tag";
-    public static final String digestHeader = "digest";
 
     @Override
     public void process(Exchange exchange) throws Exception {
