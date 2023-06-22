@@ -68,7 +68,7 @@ public class QuayRoutes extends RouteBuilder {
                                     v -> new org.crda.image.Vulnerability(v.getName(), v.getSeverity()),
                                     (k1, k2) -> k1));
 
-                    return new Image(image, new ArrayList<org.crda.image.Vulnerability>(vulnerabilityMap.values()));
+                    return new Image(image, new ArrayList<>(vulnerabilityMap.values()));
                 });
     }
 }
