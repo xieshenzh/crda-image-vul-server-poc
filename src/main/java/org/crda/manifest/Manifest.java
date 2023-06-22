@@ -3,13 +3,15 @@ package org.crda.manifest;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
+import java.util.List;
+
 @RegisterForReflection
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Manifest {
 
     private String mediaType;
     private String schemaVersion;
-    private Descriptor[] manifests;
+    private List<Descriptor> manifests;
     private Descriptor config;
 
     public Manifest() {
@@ -31,11 +33,11 @@ public class Manifest {
         this.schemaVersion = schemaVersion;
     }
 
-    public Descriptor[] getManifests() {
+    public List<Descriptor> getManifests() {
         return manifests;
     }
 
-    public void setManifests(Descriptor[] manifests) {
+    public void setManifests(List<Descriptor> manifests) {
         this.manifests = manifests;
     }
 

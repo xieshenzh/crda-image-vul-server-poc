@@ -77,10 +77,10 @@ public class ImageRefProcessor implements Processor {
         }
 
         if (Strings.isNullOrEmpty(registry) || dockerRegistryDNS.equals(registry) || dockerRegistryLegacy.equals(registry)) {
-            registry = dockerRegistry;
+            registry = org.crda.registry.Constants.dockerRegistry;
         }
 
-        if (dockerRegistry.equals(registry) && !repository.contains("/")) {
+        if (org.crda.registry.Constants.dockerRegistry.equals(registry) && !repository.contains("/")) {
             repository = dockerLibrary + "/" + repository;
         }
 

@@ -8,7 +8,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 
 @QuarkusTest
-public class EntryTest {
+public class EntryRoutesTest {
 
     @Test
     public void fruits() {

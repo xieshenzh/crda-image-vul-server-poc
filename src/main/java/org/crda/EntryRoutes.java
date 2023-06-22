@@ -5,13 +5,14 @@ import org.apache.camel.model.dataformat.JsonLibrary;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.model.rest.RestParamType;
 import org.crda.image.ImageRefProcessor;
+import org.crda.registry.RegistryUnsupportedException;
 
-import static org.crda.image.Constants.quayRegistry;
+import static org.crda.registry.Constants.quayRegistry;
 import static org.crda.image.Constants.registryHeader;
 
-public class Entry extends RouteBuilder {
+public class EntryRoutes extends RouteBuilder {
 
-    public Entry() {
+    public EntryRoutes() {
     }
 
     @Override
@@ -30,9 +31,14 @@ public class Entry extends RouteBuilder {
                 .process(new ImageRefProcessor())
                 .choice()
                 .when(header(registryHeader).isEqualTo(quayRegistry))
-                .to("direct:manifest").to("direct:quay-vulnerabilities")
+                .to("direct:manifest")
+                .to("direct:quay-vulnerabilities")
                 .otherwise()
-                .to("direct:hello")
+                .process(exchange -> {
+                    String image = exchange.getIn().getHeader("image", String.class);
+                    String registry = exchange.getIn().getHeader(registryHeader, String.class);
+                    throw new RegistryUnsupportedException(String.format("Registry %s of image %s is not supported", registry, image));
+                })
                 .end();
 
         from("direct:hello")
