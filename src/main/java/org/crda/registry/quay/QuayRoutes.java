@@ -1,12 +1,10 @@
 package org.crda.registry.quay;
 
-import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.apache.camel.processor.aggregate.GroupedBodyAggregationStrategy;
 import org.crda.image.Image;
-import org.crda.registry.RegistryUnsupportedException;
 
 import java.util.*;
 import java.util.stream.Collectors;

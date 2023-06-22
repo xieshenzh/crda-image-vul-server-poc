@@ -2,11 +2,8 @@ package org.crda.manifest;
 
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.dataformat.JsonLibrary;
-import org.crda.registry.quay.QuayRequestException;
 
 import java.io.StringReader;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
