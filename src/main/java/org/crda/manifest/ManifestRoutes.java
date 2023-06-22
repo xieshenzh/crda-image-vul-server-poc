@@ -2,6 +2,7 @@ package org.crda.manifest;
 
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.dataformat.JsonLibrary;
+import org.crda.registry.quay.QuayRequestException;
 
 import java.io.StringReader;
 import java.util.Arrays;
@@ -11,6 +12,8 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.apache.camel.Exchange.CONTENT_TYPE;
+import static org.apache.camel.Exchange.HTTP_RESPONSE_CODE;
 import static org.apache.camel.support.builder.PredicateBuilder.and;
 import static org.apache.camel.support.builder.PredicateBuilder.or;
 import static org.crda.manifest.Constants.digestHeader;
@@ -22,6 +25,12 @@ public class ManifestRoutes extends RouteBuilder {
 
     @Override
     public void configure() throws Exception {
+        onException(ManifestClientException.class)
+                .setHeader(HTTP_RESPONSE_CODE, constant(500))
+                .setHeader(CONTENT_TYPE, constant("text/plain"))
+                .handled(true)
+                .setBody().simple("${exception.message}");
+
         from("direct:manifest")
                 .to("direct:manifest-body")
                 .choice()

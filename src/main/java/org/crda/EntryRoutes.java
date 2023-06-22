@@ -1,12 +1,18 @@
 package org.crda;
 
+import org.apache.camel.Exchange;
+import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.model.rest.RestParamType;
 import org.crda.image.ImageRefProcessor;
+import org.crda.image.InvalidImageRefException;
 import org.crda.registry.RegistryUnsupportedException;
 
+import static org.apache.camel.Exchange.CONTENT_TYPE;
+import static org.apache.camel.Exchange.HTTP_RESPONSE_CODE;
 import static org.crda.registry.Constants.quayRegistry;
 import static org.crda.image.Constants.registryHeader;
 
@@ -20,6 +26,18 @@ public class EntryRoutes extends RouteBuilder {
         restConfiguration().contextPath("/image")
                 .bindingMode(RestBindingMode.json)
                 .clientRequestValidation(true);
+
+        onException(RegistryUnsupportedException.class)
+                .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(422))
+                .setHeader(Exchange.CONTENT_TYPE, constant("text/plain"))
+                .handled(true)
+                .setBody().simple("${exception.message}");
+
+        onException(InvalidImageRefException.class)
+                .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(400))
+                .setHeader(Exchange.CONTENT_TYPE, constant("text/plain"))
+                .handled(true)
+                .setBody().simple("${exception.message}");
 
         rest("/vulnerabilities")
                 .get()
@@ -40,11 +58,6 @@ public class EntryRoutes extends RouteBuilder {
                     throw new RegistryUnsupportedException(String.format("Registry %s of image %s is not supported", registry, image));
                 })
                 .end();
-
-        from("direct:hello")
-                .toD("https://httpbin.org/get?bridgeEndpoint=true&test=${header.test}")
-                .unmarshal()
-                .json(JsonLibrary.Jackson);
     }
 }
 

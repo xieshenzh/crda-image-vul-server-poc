@@ -1,9 +1,12 @@
 package org.crda.registry.quay;
 
+import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.apache.camel.processor.aggregate.GroupedBodyAggregationStrategy;
 import org.crda.image.Image;
+import org.crda.registry.RegistryUnsupportedException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -16,8 +19,22 @@ public class QuayRoutes extends RouteBuilder {
 
     @Override
     public void configure() throws Exception {
+        onException(QuayRequestException.class)
+                .setHeader(HTTP_RESPONSE_CODE, simple("${exception.getCode()}"))
+                .setHeader(CONTENT_TYPE, constant("text/plain"))
+                .handled(true)
+                .setBody().simple("${exception.message}");
+
+        onException(HttpOperationFailedException.class)
+                .logStackTrace(false)
+                .setHeader(HTTP_RESPONSE_CODE, simple("${exception.getStatusCode()}"))
+                .setHeader(CONTENT_TYPE, constant("text/plain"))
+                .handled(true)
+                .setBody().simple("Message: ${exception.message}, Response: ${exception.getResponseBody()}");
+
         from("direct:quay-vulnerabilities")
                 .split(body(), new GroupedBodyAggregationStrategy())
+                .stopOnException()
                 .parallelProcessing()
                 .removeHeaders("CamelHttp*")
                 .removeHeader("User-Agent")
@@ -26,10 +43,9 @@ public class QuayRoutes extends RouteBuilder {
                 .toD("https://quay.io")
                 .process(exchange -> {
                     Integer code = exchange.getIn().getHeader(HTTP_RESPONSE_CODE, Integer.class);
-                    String text = exchange.getIn().getHeader(HTTP_RESPONSE_TEXT, String.class);
                     String message = exchange.getIn().getBody(String.class);
-                    if (code != 200 || !"OK".equals(text)) {
-                        throw new QuayRequestException(String.format("Invoking quay.io API Secscan failed, code %d, message %s", code, message));
+                    if (code != 200) {
+                        throw new QuayRequestException(message, code);
                     }
                 })
                 .unmarshal()
