@@ -4,6 +4,9 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.apache.camel.processor.aggregate.GroupedBodyAggregationStrategy;
+import org.crda.clair.model.quay.Feature;
+import org.crda.clair.model.quay.Secscan;
+import org.crda.clair.model.quay.Vulnerability;
 import org.crda.image.Image;
 
 import java.util.*;

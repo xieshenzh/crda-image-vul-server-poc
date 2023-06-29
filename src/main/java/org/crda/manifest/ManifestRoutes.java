@@ -2,6 +2,8 @@ package org.crda.manifest;
 
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.dataformat.JsonLibrary;
+import org.crda.skopeo.model.raw.Descriptor;
+import org.crda.skopeo.model.raw.Manifest;
 
 import java.io.StringReader;
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package org.crda.registry.quay;
+package org.crda.clair.model.quay;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

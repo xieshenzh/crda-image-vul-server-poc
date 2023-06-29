@@ -1,4 +1,4 @@
-package org.crda.registry.quay;
+package org.crda.clair.model.quay;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -58,11 +58,11 @@ public class Metadata {
         this.distroVersion = distroVersion;
     }
 
-    public org.crda.registry.quay.NVD getNVD() {
+    public org.crda.clair.model.quay.NVD getNVD() {
         return NVD;
     }
 
-    public void setNVD(org.crda.registry.quay.NVD NVD) {
+    public void setNVD(org.crda.clair.model.quay.NVD NVD) {
         this.NVD = NVD;
     }
 }
