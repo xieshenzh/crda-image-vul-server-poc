@@ -15,7 +15,7 @@ public class SkopeoRoutes extends RouteBuilder {
     @Override
     public void configure() throws Exception {
 
-        from("direct:skopeo-inspect")
+        from("direct:skopeoInspect")
                 .toD("exec:skopeo?args=inspect docker://${header.image}")
                 .process(new ExecErrorProcessor())
                 .unmarshal()
@@ -28,7 +28,7 @@ public class SkopeoRoutes extends RouteBuilder {
                                     () -> exchange.getIn().setBody(null));
                 });
 
-        from("direct:skopeo-inspect-raw")
+        from("direct:skopeoInspectRaw")
                 .toD("exec:skopeo?args=inspect --raw docker://${header.image}")
                 .process(new ExecErrorProcessor())
                 .unmarshal()

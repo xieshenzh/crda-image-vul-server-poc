@@ -8,7 +8,7 @@ import org.crda.exec.ExecErrorProcessor;
 public class ClairRoutes extends RouteBuilder {
     @Override
     public void configure() throws Exception {
-        from("direct:clair-action-report")
+        from("direct:clairReport")
                 .toD("exec:clair-action?args=report --format=quay --db-path=matcher.db --image-ref quay.io/keycloak/keycloak")
                 .process(new ExecErrorProcessor())
                 .unmarshal()
