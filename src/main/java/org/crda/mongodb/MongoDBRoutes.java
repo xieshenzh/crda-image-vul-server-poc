@@ -8,13 +8,20 @@ import org.apache.camel.Expression;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mongodb.MongoDbConstants;
 import org.apache.camel.component.mongodb.processor.idempotent.MongoDbIdempotentRepository;
+import org.apache.camel.model.dataformat.JsonLibrary;
+import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.crda.mongodb.model.Image;
 
 @ApplicationScoped
 public class MongoDBRoutes extends RouteBuilder {
 
     @Inject
-    private MongoDbIdempotentRepository idempotentRepository;
+    MongoDBConfiguration configuration;
+
+    @Inject
+    MongoDbIdempotentRepository idempotentRepository;
+
     @Override
     public void configure() throws Exception {
         //TODO
@@ -24,7 +31,8 @@ public class MongoDBRoutes extends RouteBuilder {
                 .idempotentConsumer(body()).idempotentRepository(idempotentRepository);
 
         from("direct:saveImageVulnerabilities")
-                .to("mongodb:mongoClient?database=crda&collection=vuls&collectionIndex={\"id\":1}&operation=save");
+                .to("mongodb:mongoClient?database=" + configuration.dbName + "&collection=" +
+                        configuration.collectionName + "&collectionIndex={\"id\":1}&operation=save");
 
         from("direct:findImageVulnerabilities")
                 .setHeader(MongoDbConstants.CRITERIA, new Expression() {
@@ -35,6 +43,14 @@ public class MongoDBRoutes extends RouteBuilder {
                         return exchange.getContext().getTypeConverter().convertTo(type, eq);
                     }
                 })
-                .to("mongodb:mongoClient?database=crda&collection=vuls&operation=findOneByQuery");
+                .to("mongodb:mongoClient?database=" + configuration.dbName + "&collection=" +
+                        configuration.collectionName + "&operation=findOneByQuery")
+                .filter(body().isNotNull())
+                .process(exchange -> {
+                    Document result = exchange.getIn().getBody(Document.class);
+                    exchange.getIn().setBody(result.toJson());
+                })
+                .unmarshal()
+                .json(JsonLibrary.Jackson, Image.class);
     }
 }
