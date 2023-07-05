@@ -25,10 +25,11 @@ public class MongoDBRoutes extends RouteBuilder {
     @Override
     public void configure() throws Exception {
         //TODO
-        onException(RuntimeException.class);
+//        onException(RuntimeException.class);
 
         from("seda:filterDuplicateImage")
-                .idempotentConsumer(body()).idempotentRepository(idempotentRepository);
+                .idempotentConsumer(body()).idempotentRepository(idempotentRepository)
+                .to("direct:clairReport");
 
         from("direct:saveImageVulnerabilities")
                 .to("mongodb:mongoClient?database=" + configuration.dbName + "&collection=" +
