@@ -1,4 +1,4 @@
-package org.crda.image;
+package org.crda.regclient;
 
 public interface Constants {
 
@@ -6,4 +6,7 @@ public interface Constants {
     String repositoryHeader = "repository";
     String tagHeader = "tag";
     String digestHeader = "digest";
+
+    String dockerRegistry = "docker.io";
+    String quayRegistry = "quay.io";
 }

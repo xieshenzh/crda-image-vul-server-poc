@@ -1,4 +1,4 @@
-package org.crda.image;
+package org.crda.regclient;
 
 public class InvalidImageRefException extends IllegalArgumentException {
     public InvalidImageRefException() {

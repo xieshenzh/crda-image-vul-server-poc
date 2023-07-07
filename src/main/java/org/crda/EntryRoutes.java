@@ -1,17 +1,26 @@
 package org.crda;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.component.mongodb.processor.idempotent.MongoDbIdempotentRepository;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.model.rest.RestParamType;
 import org.apache.camel.processor.aggregate.GroupedBodyAggregationStrategy;
-import org.crda.fabric8.ImageName;
+import org.crda.fabric8.ImageNameProcessor;
+import org.crda.mongodb.model.Image;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.apache.camel.support.builder.PredicateBuilder.or;
 
+@ApplicationScoped
 public class EntryRoutes extends RouteBuilder {
+
+    @Inject
+    MongoDbIdempotentRepository idempotentRepository;
 
     public EntryRoutes() {
     }
@@ -21,6 +30,11 @@ public class EntryRoutes extends RouteBuilder {
         restConfiguration().contextPath("/image")
                 .bindingMode(RestBindingMode.json)
                 .clientRequestValidation(true);
+
+        onException(IllegalArgumentException.class)
+                .process(exchange -> {
+                    int i = 0;
+                });
 
 //        onException(RegistryUnsupportedException.class)
 //                .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(422))
@@ -44,7 +58,9 @@ public class EntryRoutes extends RouteBuilder {
                 .to("direct:parseImageName")
                 .to("direct:execSkopeo")
                 .to("direct:checkImageFound")
-                .to("direct:queryMongoDB");
+                .to("direct:queryMongoDB")
+                .to("direct:checkData")
+                .to("direct:scanImages");
 
         from("direct:execSkopeo")
                 .to("direct:skopeoInspectRaw")
@@ -66,33 +82,43 @@ public class EntryRoutes extends RouteBuilder {
                             () -> {
                                 throw new IllegalArgumentException(String.format("Image %s is not found", image));
                             });
-                });
+                })
+                .otherwise()
+                .process(exchange -> {
+                    exchange.getIn().setHeader("digests", exchange.getIn().getBody());
+                })
+                .endChoice();
 
         from("direct:parseImageName")
-                .process(exchange -> {
-                    try {
-                        String image = exchange.getIn().getHeader("image", String.class);
-                        ImageName imageName = new ImageName(image);
-                        String imageRegistryRepo = imageName.getNameWithoutTag();
-                        exchange.getIn().setHeader("imageRegRepo", imageRegistryRepo);
-                    } catch (Exception e) {
-                        throw new IllegalArgumentException(e.getMessage());
-                    }
-                });
+                .process(new ImageNameProcessor());
 
         from("direct:queryMongoDB")
                 .split(body(), new GroupedBodyAggregationStrategy())
                 .stopOnException()
                 .parallelProcessing()
-                .process(exchange -> {
-                    String registryRepo = exchange.getIn().getHeader("imageRegRepo", String.class);
-                    String digest = exchange.getIn().getBody(String.class);
-                    exchange.getIn().setBody(registryRepo + "@" + digest);
-                })
+                .process(new ImageDigestProcessor())
                 .to("direct:findImageVulnerabilities")
                 .end()
+                .choice()
+                .when(or(body().isNull(), bodyAs(List.class).method("isEmpty").isEqualTo(true)))
+                .process(exchange -> {
+                    List<?> digests = exchange.getIn().getHeader("digests", List.class);
+                    exchange.getIn().setHeader("digestsNotFound", digests);
+                })
+                .otherwise()
                 .setBody(exchange -> {
                     List<?> results = exchange.getIn().getBody(List.class);
+
+                    Set<String> digestSet = results.stream()
+                            .filter(e -> e instanceof org.crda.mongodb.model.Image)
+                            .map(e -> ((org.crda.mongodb.model.Image) e))
+                            .map(org.crda.mongodb.model.Image::getDigest)
+                            .collect(Collectors.toSet());
+
+                    List<?> digests = exchange.getIn().getHeader("digests", List.class);
+                    List<?> digestsMissing = digests.stream().filter(d -> !digestSet.contains(d)).toList();
+                    exchange.getIn().setHeader("digestsNotFound", digestsMissing);
+
                     Map<String, org.crda.mongodb.model.Vulnerability> vulnerabilityMap = results.stream()
                             .filter(e -> e instanceof org.crda.mongodb.model.Image)
                             .map(e -> ((org.crda.mongodb.model.Image) e))
@@ -103,8 +129,45 @@ public class EntryRoutes extends RouteBuilder {
                                     v -> v,
                                     (k1, k2) -> k1));
                     return vulnerabilityMap.values();
-                });
+                })
+                .endChoice();
 
+        from("direct:checkData")
+                .process(exchange -> {
+                    List<?> digests = exchange.getIn().getHeader("digests", List.class);
+                    List<?> digestsNotFound = exchange.getIn().getHeader("digestsNotFound", List.class);
+                    if (digestsNotFound == null || digestsNotFound.isEmpty()) {
+                        exchange.getIn().setHeader("scanned", "true");
+                    } else if (new HashSet<>(digestsNotFound).containsAll(digests)) {
+                        exchange.getIn().setHeader("scanned", "false");
+                    } else {
+                        exchange.getIn().setHeader("scanned", "partial");
+                    }
+                })
+                .choice()
+                .when(header("scanned").isEqualTo("false"))
+                .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(202))
+                .setHeader(Exchange.CONTENT_TYPE, constant("text/plain"))
+                .setBody(constant("Image scan is in process. Please try again later."))
+                .when(header("scanned").isEqualTo("partial"))
+                .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(202))
+                .endChoice();
+
+        from("direct:scanImages")
+                .choice()
+                .when(header("digestsNotFound").isNotNull())
+                .split(header("digestsNotFound"))
+                .parallelProcessing()
+                .process(new ImageDigestProcessor())
+                .to("seda:scanImage?concurrentConsumers=1&waitForTaskToComplete=Never&timeout=0")
+                .end()
+                .endChoice();
+
+        from("seda:scanImage?concurrentConsumers=1&waitForTaskToComplete=Never&timeout=0")
+                .idempotentConsumer(body()).idempotentRepository(idempotentRepository)
+                .to("direct:clairReport")
+                .convertBodyTo(Image.class)
+                .to("direct:saveImageVulnerabilities");
     }
 }
 

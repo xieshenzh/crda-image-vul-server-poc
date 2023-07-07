@@ -9,7 +9,7 @@ public class ClairRoutes extends RouteBuilder {
     @Override
     public void configure() throws Exception {
         from("direct:clairReport")
-                .toD("exec:clair-action?args=report --format=quay --db-path=clair.db.path --image-ref ${body}")
+                .toD("exec:clair-action?args=report --format=quay --db-path={{clair.db.path}} --image-ref ${body}")
                 .process(new ExecErrorProcessor())
                 .unmarshal()
                 .json(JsonLibrary.Jackson, Secscan.class);

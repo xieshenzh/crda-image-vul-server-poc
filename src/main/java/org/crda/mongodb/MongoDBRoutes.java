@@ -7,7 +7,6 @@ import org.apache.camel.Exchange;
 import org.apache.camel.Expression;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mongodb.MongoDbConstants;
-import org.apache.camel.component.mongodb.processor.idempotent.MongoDbIdempotentRepository;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -19,20 +18,19 @@ public class MongoDBRoutes extends RouteBuilder {
     @Inject
     MongoDBConfiguration configuration;
 
-    @Inject
-    MongoDbIdempotentRepository idempotentRepository;
-
     @Override
     public void configure() throws Exception {
         //TODO
 //        onException(RuntimeException.class);
 
-        from("seda:filterDuplicateImage")
-                .idempotentConsumer(body()).idempotentRepository(idempotentRepository)
-                .to("direct:clairReport");
-
         from("direct:saveImageVulnerabilities")
-                .to("mongodb:mongoClient?database=" + configuration.dbName + "&collection=" +
+                .process(exchange -> {
+                    Image image = exchange.getIn().getBody(Image.class);
+                    String regRepo = exchange.getIn().getHeader("imageRegRepo", String.class);
+                    image.setId(regRepo + "@" + image.getDigest());
+                    exchange.getIn().setBody(image);
+                })
+                .to("mongodb:crda?database=" + configuration.dbName + "&collection=" +
                         configuration.collectionName + "&collectionIndex={\"id\":1}&operation=save");
 
         from("direct:findImageVulnerabilities")
@@ -44,7 +42,7 @@ public class MongoDBRoutes extends RouteBuilder {
                         return exchange.getContext().getTypeConverter().convertTo(type, eq);
                     }
                 })
-                .to("mongodb:mongoClient?database=" + configuration.dbName + "&collection=" +
+                .to("mongodb:crda?database=" + configuration.dbName + "&collection=" +
                         configuration.collectionName + "&operation=findOneByQuery")
                 .filter(body().isNotNull())
                 .process(exchange -> {

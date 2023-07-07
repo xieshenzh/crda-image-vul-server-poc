@@ -13,14 +13,17 @@ public class MongoDBConfiguration {
     @Inject
     MongoClient mongoClient;
 
-    @ConfigProperty(name = "quarkus.mongodb.database")
+    @ConfigProperty(name = "quarkus.mongodb.crda.database")
     String dbName;
 
-    @ConfigProperty(name = "quarkus.mongodb.collection")
+    @ConfigProperty(name = "quarkus.mongodb.crda.collection")
     String collectionName;
+
+    @ConfigProperty(name = "quarkus.mongodb.crda.idempotent.collection")
+    String idempotentCollectionName;
 
     @Produces
     MongoDbIdempotentRepository mongoDbIdempotentRepository() {
-        return new MongoDbIdempotentRepository(mongoClient, collectionName, dbName);
+        return new MongoDbIdempotentRepository(mongoClient, idempotentCollectionName, dbName);
     }
 }

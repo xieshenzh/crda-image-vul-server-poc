@@ -2,7 +2,7 @@
  * Some contents in this file are translated from github.com/regclient/regclient
  */
 
-package org.crda.image;
+package org.crda.regclient;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.crda.image.Constants.*;
+import static org.crda.regclient.Constants.*;
 
 public class ImageRefProcessor implements Processor {
 
@@ -77,10 +77,10 @@ public class ImageRefProcessor implements Processor {
         }
 
         if (Strings.isNullOrEmpty(registry) || dockerRegistryDNS.equals(registry) || dockerRegistryLegacy.equals(registry)) {
-            registry = org.crda.registry.Constants.dockerRegistry;
+            registry = dockerRegistry;
         }
 
-        if (org.crda.registry.Constants.dockerRegistry.equals(registry) && !repository.contains("/")) {
+        if (dockerRegistry.equals(registry) && !repository.contains("/")) {
             repository = dockerLibrary + "/" + repository;
         }
 
