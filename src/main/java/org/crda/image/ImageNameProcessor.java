@@ -1,4 +1,4 @@
-package org.crda.fabric8;
+package org.crda.image;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;

@@ -8,7 +8,7 @@ import org.apache.camel.component.mongodb.processor.idempotent.MongoDbIdempotent
 import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.model.rest.RestParamType;
 import org.apache.camel.processor.aggregate.GroupedBodyAggregationStrategy;
-import org.crda.fabric8.ImageNameProcessor;
+import org.crda.image.ImageNameProcessor;
 import org.crda.mongodb.model.Image;
 
 import java.util.*;

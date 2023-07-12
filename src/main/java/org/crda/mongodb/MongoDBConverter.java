@@ -1,8 +1,8 @@
 package org.crda.mongodb;
 
 import org.apache.camel.Converter;
-import org.crda.clair.model.quay.Feature;
-import org.crda.clair.model.quay.Secscan;
+import org.crda.image.vulnerability.model.quay.Feature;
+import org.crda.image.vulnerability.model.quay.Secscan;
 import org.crda.mongodb.model.Image;
 import org.crda.mongodb.model.Vulnerability;
 
@@ -27,7 +27,7 @@ public class MongoDBConverter {
                                 .map(Feature::getVulnerabilities)
                                 .filter(Objects::nonNull)
                                 .flatMap(Collection::stream)
-                                .collect(Collectors.toMap(org.crda.clair.model.quay.Vulnerability::getName,
+                                .collect(Collectors.toMap(org.crda.image.vulnerability.model.quay.Vulnerability::getName,
                                         v -> new Vulnerability(v.getName(), v.getSeverity()),
                                         (k1, k2) -> k1)) :
                         Collections.emptyMap();

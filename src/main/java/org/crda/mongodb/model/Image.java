@@ -9,7 +9,7 @@ import java.util.List;
 @RegisterForReflection
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Image {
-    private String id;
+    private String _id;
     private String digest;
     private List<Vulnerability> vulnerabilities;
     private Date created;
@@ -17,12 +17,12 @@ public class Image {
     public Image() {
     }
 
-    public String getId() {
-        return id;
+    public String get_id() {
+        return _id;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void set_id(String _id) {
+        this._id = _id;
     }
 
     public String getDigest() {

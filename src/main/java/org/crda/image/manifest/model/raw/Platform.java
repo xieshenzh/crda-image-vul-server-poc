@@ -1,4 +1,4 @@
-package org.crda.skopeo.model.raw;
+package org.crda.image.manifest.model.raw;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.quarkus.runtime.annotations.RegisterForReflection;

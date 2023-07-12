@@ -27,23 +27,23 @@ public class MongoDBRoutes extends RouteBuilder {
                 .process(exchange -> {
                     Image image = exchange.getIn().getBody(Image.class);
                     String regRepo = exchange.getIn().getHeader("imageRegRepo", String.class);
-                    image.setId(regRepo + "@" + image.getDigest());
+                    image.set_id(regRepo + "@" + image.getDigest());
                     exchange.getIn().setBody(image);
                 })
                 .to("mongodb:crda?database=" + configuration.dbName + "&collection=" +
                         configuration.collectionName + "&collectionIndex={\"id\":1}&operation=save");
 
         from("direct:findImageVulnerabilities")
-                .setHeader(MongoDbConstants.CRITERIA, new Expression() {
-                    @Override
-                    public <T> T evaluate(Exchange exchange, Class<T> type) {
-                        String id = exchange.getIn().getBody(String.class);
-                        Bson eq = Filters.eq("id", id);
-                        return exchange.getContext().getTypeConverter().convertTo(type, eq);
-                    }
-                })
+//                .setHeader(MongoDbConstants.CRITERIA, new Expression() {
+//                    @Override
+//                    public <T> T evaluate(Exchange exchange, Class<T> type) {
+//                        String id = exchange.getIn().getBody(String.class);
+//                        Bson eq = Filters.eq("id", id);
+//                        return exchange.getContext().getTypeConverter().convertTo(type, eq);
+//                    }
+//                })
                 .to("mongodb:crda?database=" + configuration.dbName + "&collection=" +
-                        configuration.collectionName + "&operation=findOneByQuery")
+                        configuration.collectionName + "&operation=findById")
                 .filter(body().isNotNull())
                 .process(exchange -> {
                     Document result = exchange.getIn().getBody(Document.class);

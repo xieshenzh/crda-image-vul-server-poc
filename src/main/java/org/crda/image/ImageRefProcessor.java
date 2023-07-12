@@ -2,7 +2,7 @@
  * Some contents in this file are translated from github.com/regclient/regclient
  */
 
-package org.crda.regclient;
+package org.crda.image;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.crda.regclient.Constants.*;
+import static org.crda.image.Constants.*;
 
 public class ImageRefProcessor implements Processor {
 

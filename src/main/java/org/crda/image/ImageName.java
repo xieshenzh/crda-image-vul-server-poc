@@ -3,7 +3,7 @@
  * https://github.com/fabric8io/docker-maven-plugin/blob/6eeb78a9b074328ef5817c1c91392d8d8350984e/src/main/java/io/fabric8/maven/docker/util/ImageName.java
  */
 
-package org.crda.fabric8;
+package org.crda.image;
 
 import java.util.ArrayList;
 import java.util.List;

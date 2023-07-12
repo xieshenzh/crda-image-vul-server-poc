@@ -1,4 +1,4 @@
-package org.crda.skopeo.model.output;
+package org.crda.image.manifest.model.output;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
