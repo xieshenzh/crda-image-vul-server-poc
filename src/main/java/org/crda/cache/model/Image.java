@@ -1,4 +1,4 @@
-package org.crda.mongodb.model;
+package org.crda.cache.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.quarkus.runtime.annotations.RegisterForReflection;
@@ -9,7 +9,7 @@ import java.util.List;
 @RegisterForReflection
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Image {
-    private String _id;
+    private String id;
     private String digest;
     private List<Vulnerability> vulnerabilities;
     private Date created;
@@ -17,12 +17,12 @@ public class Image {
     public Image() {
     }
 
-    public String get_id() {
-        return _id;
+    public String getId() {
+        return id;
     }
 
-    public void set_id(String _id) {
-        this._id = _id;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getDigest() {

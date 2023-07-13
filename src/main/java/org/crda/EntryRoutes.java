@@ -4,12 +4,13 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.mongodb.processor.idempotent.MongoDbIdempotentRepository;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.model.rest.RestParamType;
 import org.apache.camel.processor.aggregate.GroupedBodyAggregationStrategy;
+import org.apache.camel.spi.IdempotentRepository;
+import org.crda.cache.model.Image;
+import org.crda.cache.model.Vulnerability;
 import org.crda.image.ImageNameProcessor;
-import org.crda.mongodb.model.Image;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,7 +21,7 @@ import static org.apache.camel.support.builder.PredicateBuilder.or;
 public class EntryRoutes extends RouteBuilder {
 
     @Inject
-    MongoDbIdempotentRepository idempotentRepository;
+    IdempotentRepository idempotentRepository;
 
     public EntryRoutes() {
     }
@@ -110,22 +111,22 @@ public class EntryRoutes extends RouteBuilder {
                     List<?> results = exchange.getIn().getBody(List.class);
 
                     Set<String> digestSet = results.stream()
-                            .filter(e -> e instanceof org.crda.mongodb.model.Image)
-                            .map(e -> ((org.crda.mongodb.model.Image) e))
-                            .map(org.crda.mongodb.model.Image::getDigest)
+                            .filter(e -> e instanceof Image)
+                            .map(e -> ((Image) e))
+                            .map(Image::getDigest)
                             .collect(Collectors.toSet());
 
                     List<?> digests = exchange.getIn().getHeader("digests", List.class);
                     List<?> digestsMissing = digests.stream().filter(d -> !digestSet.contains(d)).toList();
                     exchange.getIn().setHeader("digestsNotFound", digestsMissing);
 
-                    Map<String, org.crda.mongodb.model.Vulnerability> vulnerabilityMap = results.stream()
-                            .filter(e -> e instanceof org.crda.mongodb.model.Image)
-                            .map(e -> ((org.crda.mongodb.model.Image) e))
-                            .map(org.crda.mongodb.model.Image::getVulnerabilities)
+                    Map<String, Vulnerability> vulnerabilityMap = results.stream()
+                            .filter(e -> e instanceof Image)
+                            .map(e -> ((Image) e))
+                            .map(Image::getVulnerabilities)
                             .filter(Objects::nonNull)
                             .flatMap(Collection::stream)
-                            .collect(Collectors.toMap(org.crda.mongodb.model.Vulnerability::getId,
+                            .collect(Collectors.toMap(Vulnerability::getId,
                                     v -> v,
                                     (k1, k2) -> k1));
                     return vulnerabilityMap.values();

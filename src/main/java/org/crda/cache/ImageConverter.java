@@ -1,18 +1,18 @@
-package org.crda.mongodb;
+package org.crda.cache;
 
 import org.apache.camel.Converter;
 import org.crda.image.vulnerability.model.quay.Feature;
 import org.crda.image.vulnerability.model.quay.Secscan;
-import org.crda.mongodb.model.Image;
-import org.crda.mongodb.model.Vulnerability;
+import org.crda.cache.model.Image;
+import org.crda.cache.model.Vulnerability;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Converter
-public class MongoDBConverter {
+public class ImageConverter {
 
-    public MongoDBConverter() {
+    public ImageConverter() {
     }
 
     @Converter
