@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
  *     <li>A last part starting with a ":" is considered to be a tag</li>
  *     <li>The rest is considered the repository name (which might be separated via slashes)</li>
  * </ul>
- *
+ * <p>
  * Example of valid names:
  *
  * <ul>
@@ -54,7 +54,7 @@ public class ImageName {
      * @param fullName The fullname of the image in Docker format.
      */
     public ImageName(String fullName) {
-        this(fullName,null);
+        this(fullName, null);
     }
 
     /**
@@ -72,7 +72,7 @@ public class ImageName {
         // set digest to null as default
         digest = null;
         // check if digest is part of fullName, if so -> extract it
-        if(fullName.contains("@sha256")) { // Of it contains digest
+        if (fullName.contains("@sha256")) { // Of it contains digest
             String[] digestParts = fullName.split("@");
             digest = digestParts[1];
             fullName = digestParts[0];
@@ -125,7 +125,7 @@ public class ImageName {
 
     private String joinTail(String[] parts) {
         StringBuilder builder = new StringBuilder();
-        for (int i = 1;i < parts.length; i++) {
+        for (int i = 1; i < parts.length; i++) {
             builder.append(parts[i]);
             if (i < parts.length - 1) {
                 builder.append("/");
@@ -189,9 +189,9 @@ public class ImageName {
     public String getFullName(String optionalRegistry) {
         String fullName = getNameWithoutTag(optionalRegistry);
         if (tag != null) {
-            fullName = fullName +  ":" + tag;
+            fullName = fullName + ":" + tag;
         }
-        if(digest != null) {
+        if (digest != null) {
             fullName = fullName + "@" + digest;
         }
         return fullName;
@@ -232,7 +232,7 @@ public class ImageName {
      * Check whether the given name validates agains the Docker rules for names
      *
      * @param image image name to validate
-     * d@throws IllegalArgumentException if the name doesnt validate
+     *              d@throws IllegalArgumentException if the name doesnt validate
      */
     public static void validate(String image) {
         // Validation will be triggered during construction
@@ -244,27 +244,27 @@ public class ImageName {
         List<String> errors = new ArrayList<>();
         // Strip off user from repository name
         String image = user != null ? repository.substring(user.length() + 1) : repository;
-        Object[] checks = new Object[] {
-            "registry", DOMAIN_REGEXP, registry,
-            "image", IMAGE_NAME_REGEXP, image,
-            "user", NAME_COMP_REGEXP, user,
-            "tag", TAG_REGEXP, tag,
-            "digest", DIGEST_REGEXP, digest
+        Object[] checks = new Object[]{
+                "registry", DOMAIN_REGEXP, registry,
+                "image", IMAGE_NAME_REGEXP, image,
+                "user", NAME_COMP_REGEXP, user,
+                "tag", TAG_REGEXP, tag,
+                "digest", DIGEST_REGEXP, digest
         };
-        for (int i = 0; i < checks.length; i +=3) {
+        for (int i = 0; i < checks.length; i += 3) {
             String value = (String) checks[i + 2];
             Pattern checkPattern = (Pattern) checks[i + 1];
             if (value != null &&
-                !checkPattern.matcher(value).matches()) {
+                    !checkPattern.matcher(value).matches()) {
                 errors.add(String.format("%s part '%s' doesn't match allowed pattern '%s'",
-                                         checks[i], value, checkPattern.pattern()));
+                        checks[i], value, checkPattern.pattern()));
             }
         }
         if (errors.size() > 0) {
             StringBuilder buf = new StringBuilder();
             buf.append(String.format("Given Docker name '%s' is invalid:\n", getFullName()));
             for (String error : errors) {
-                buf.append(String.format("   * %s\n",error));
+                buf.append(String.format("   * %s\n", error));
             }
             buf.append("See http://bit.ly/docker_image_fmt for more details");
             throw new IllegalArgumentException(buf.toString());

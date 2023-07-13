@@ -1,43 +1,48 @@
 package org.crda.cache;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import org.apache.camel.BindToRegistry;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.caffeine.CaffeineConstants;
 import org.crda.cache.model.Image;
 
+import static org.crda.Constants.imageRefHeader;
+import static org.crda.Constants.imageRegRepoHeader;
+
 public class CaffeineRoutes extends RouteBuilder {
     @Override
     public void configure() throws Exception {
-        //TODO
-//        onException(RuntimeException.class);
+        onException(RuntimeException.class)
+                .handled(true)
+                .logHandled(true)
+                .logStackTrace(true)
+                .stop();
 
         from("direct:saveImageVulnerabilities")
                 .process(exchange -> {
                     Image image = exchange.getIn().getBody(Image.class);
-                    String regRepo = exchange.getIn().getHeader("imageRegRepo", String.class);
+                    String regRepo = exchange.getIn().getHeader(imageRegRepoHeader, String.class);
                     String ref = regRepo + "@" + image.getDigest();
                     image.setId(ref);
                     exchange.getIn().setBody(image);
-                    exchange.getIn().setHeader("imageRef", ref);
+                    exchange.getIn().setHeader(imageRefHeader, ref);
                 })
                 .setHeader(CaffeineConstants.ACTION, constant(CaffeineConstants.ACTION_PUT))
-                .setHeader(CaffeineConstants.KEY, header("imageRef"))
+                .setHeader(CaffeineConstants.KEY, header(imageRefHeader))
                 .setHeader(CaffeineConstants.VALUE, body())
                 .to("caffeine-cache://crda")
-                .process(exchange ->{
-                    Object result = exchange.getIn().getHeader(CaffeineConstants.ACTION_HAS_RESULT);
-                    Object succeeded = exchange.getIn().getHeader(CaffeineConstants.ACTION_SUCCEEDED);
-                });
+                .choice()
+                .when(header(CaffeineConstants.ACTION_SUCCEEDED).isEqualTo(false))
+                .throwException(RuntimeException.class, "Failed to write to cache")
+                .endChoice();
 
         from("direct:findImageVulnerabilities")
                 .setHeader(CaffeineConstants.ACTION, constant(CaffeineConstants.ACTION_GET))
                 .setHeader(CaffeineConstants.KEY, body())
                 .to("caffeine-cache://crda")
-                .process(exchange -> {
-                    Object result = exchange.getIn().getHeader(CaffeineConstants.ACTION_HAS_RESULT);
-                    Object succeeded = exchange.getIn().getHeader(CaffeineConstants.ACTION_SUCCEEDED);
-                });
+                .choice()
+                .when(header(CaffeineConstants.ACTION_SUCCEEDED).isEqualTo(false))
+                .throwException(RuntimeException.class, "Failed to read from cache")
+                .when(header(CaffeineConstants.ACTION_HAS_RESULT).isEqualTo(false))
+                .setBody(constant((Object) null))
+                .endChoice();
     }
 }

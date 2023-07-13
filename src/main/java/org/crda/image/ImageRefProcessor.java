@@ -1,5 +1,6 @@
 /**
- * Some contents in this file are translated from github.com/regclient/regclient
+ * Some contents in this file are translated from
+ * https://github.com/regclient/regclient/blob/20c847eb49514cfd7bc1958f165e662c33e3f844/types/ref/ref.go
  */
 
 package org.crda.image;
@@ -12,7 +13,7 @@ import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.crda.image.Constants.*;
+import static org.crda.Constants.imageHeader;
 
 public class ImageRefProcessor implements Processor {
 
@@ -43,22 +44,23 @@ public class ImageRefProcessor implements Processor {
     private static final String dockerRegistryLegacy = "index.docker.io";
     private static final String dockerRegistryDNS = "registry-1.docker.io";
     private static final String dockerLibrary = "library";
+    private static final String dockerRegistry = "docker.io";
 
     @Override
     public void process(Exchange exchange) throws Exception {
-        String imageStr = exchange.getIn().getHeader("image", String.class);
+        String imageStr = exchange.getIn().getHeader(imageHeader, String.class);
 
         Matcher schemeMatcher = schemePattern.matcher(imageStr);
         if (schemeMatcher.find() && !Strings.isNullOrEmpty(schemeMatcher.group("scheme"))) {
-            throw new InvalidImageRefException(String.format("Format of image reference %s is not supported", imageStr));
+            throw new IllegalArgumentException(String.format("Format of image reference %s is not supported", imageStr));
         }
 
         Matcher refMatcher = refPattern.matcher(imageStr);
         if (!refMatcher.find()) {
             if (refPattern.matcher(imageStr.toLowerCase()).find()) {
-                throw new InvalidImageRefException(String.format("Image reference %s must be lowercase", imageStr));
+                throw new IllegalArgumentException(String.format("Image reference %s must be lowercase", imageStr));
             }
-            throw new InvalidImageRefException(String.format("Image reference %s is not valid", imageStr));
+            throw new IllegalArgumentException(String.format("Image reference %s is not valid", imageStr));
         }
 
         String registry = refMatcher.group(registryGroup);
@@ -67,7 +69,7 @@ public class ImageRefProcessor implements Processor {
         String digest = refMatcher.group(digestGroup);
 
         if (Strings.isNullOrEmpty(repository)) {
-            throw new InvalidImageRefException(String.format("Image reference %s is not valid", imageStr));
+            throw new IllegalArgumentException(String.format("Image reference %s is not valid", imageStr));
         }
 
         String[] repoParts = repository.split("/");
@@ -89,12 +91,7 @@ public class ImageRefProcessor implements Processor {
         }
 
         if (Strings.isNullOrEmpty(repository)) {
-            throw new InvalidImageRefException(String.format("Image reference %s is not valid", imageStr));
+            throw new IllegalArgumentException(String.format("Image reference %s is not valid", imageStr));
         }
-
-        exchange.getIn().setHeader(registryHeader, registry);
-        exchange.getIn().setHeader(repositoryHeader, repository);
-        exchange.getIn().setHeader(tagHeader, tag);
-        exchange.getIn().setHeader(digestHeader, digest);
     }
 }

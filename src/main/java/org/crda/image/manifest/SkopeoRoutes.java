@@ -11,9 +11,19 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static org.apache.camel.Exchange.CONTENT_TYPE;
+import static org.apache.camel.Exchange.HTTP_RESPONSE_CODE;
+import static org.crda.Constants.platformHeader;
+
 public class SkopeoRoutes extends RouteBuilder {
     @Override
     public void configure() throws Exception {
+
+        onException(RuntimeException.class)
+                .handled(true)
+                .setHeader(HTTP_RESPONSE_CODE, constant(500))
+                .setHeader(CONTENT_TYPE, constant("text/plain"))
+                .setBody().simple("${exception.message}");
 
         from("direct:skopeoInspect")
                 .toD("exec:skopeo?args=inspect docker://${header.image}")
@@ -35,7 +45,7 @@ public class SkopeoRoutes extends RouteBuilder {
                 .json(JsonLibrary.Jackson, org.crda.image.manifest.model.raw.Manifest.class)
                 .process(exchange -> {
                     org.crda.image.manifest.model.raw.Manifest manifest = exchange.getIn().getBody(org.crda.image.manifest.model.raw.Manifest.class);
-                    String platformStr = exchange.getIn().getHeader("platform", String.class);
+                    String platformStr = exchange.getIn().getHeader(platformHeader, String.class);
                     if (platformStr != null) {
                         Platform platform = new Platform(platformStr);
                         Optional.ofNullable(manifest.getManifests())

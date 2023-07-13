@@ -11,11 +11,15 @@ import org.apache.camel.spi.IdempotentRepository;
 import org.crda.cache.model.Image;
 import org.crda.cache.model.Vulnerability;
 import org.crda.image.ImageNameProcessor;
+import org.crda.image.ImageRefProcessor;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.apache.camel.Exchange.CONTENT_TYPE;
+import static org.apache.camel.Exchange.HTTP_RESPONSE_CODE;
 import static org.apache.camel.support.builder.PredicateBuilder.or;
+import static org.crda.Constants.*;
 
 @ApplicationScoped
 public class EntryRoutes extends RouteBuilder {
@@ -33,21 +37,11 @@ public class EntryRoutes extends RouteBuilder {
                 .clientRequestValidation(true);
 
         onException(IllegalArgumentException.class)
-                .process(exchange -> {
-                    int i = 0;
-                });
-
-//        onException(RegistryUnsupportedException.class)
-//                .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(422))
-//                .setHeader(Exchange.CONTENT_TYPE, constant("text/plain"))
-//                .handled(true)
-//                .setBody().simple("${exception.message}");
-//
-//        onException(InvalidImageRefException.class)
-//                .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(400))
-//                .setHeader(Exchange.CONTENT_TYPE, constant("text/plain"))
-//                .handled(true)
-//                .setBody().simple("${exception.message}");
+                .logStackTrace(false)
+                .setHeader(HTTP_RESPONSE_CODE, constant(400))
+                .setHeader(CONTENT_TYPE, constant("text/plain"))
+                .handled(true)
+                .setBody().simple("${exception.message}");
 
         rest("/vulnerabilities")
                 .get()
@@ -59,7 +53,7 @@ public class EntryRoutes extends RouteBuilder {
                 .to("direct:parseImageName")
                 .to("direct:execSkopeo")
                 .to("direct:checkImageFound")
-                .to("direct:queryMongoDB")
+                .to("direct:queryCache")
                 .to("direct:checkData")
                 .to("direct:scanImages");
 
@@ -74,8 +68,8 @@ public class EntryRoutes extends RouteBuilder {
                 .choice()
                 .when(or(body().isNull(), bodyAs(List.class).method("isEmpty").isEqualTo(true)))
                 .process(exchange -> {
-                    String image = exchange.getIn().getHeader("image", String.class);
-                    String platform = exchange.getIn().getHeader("platform", String.class);
+                    String image = exchange.getIn().getHeader(imageHeader, String.class);
+                    String platform = exchange.getIn().getHeader(platformHeader, String.class);
                     Optional.ofNullable(platform).ifPresentOrElse(
                             p -> {
                                 throw new IllegalArgumentException(String.format("Image %s with platform %s is not found", image, p));
@@ -86,14 +80,15 @@ public class EntryRoutes extends RouteBuilder {
                 })
                 .otherwise()
                 .process(exchange -> {
-                    exchange.getIn().setHeader("digests", exchange.getIn().getBody());
+                    exchange.getIn().setHeader(digestsHeader, exchange.getIn().getBody());
                 })
                 .endChoice();
 
         from("direct:parseImageName")
+                .process(new ImageRefProcessor())
                 .process(new ImageNameProcessor());
 
-        from("direct:queryMongoDB")
+        from("direct:queryCache")
                 .split(body(), new GroupedBodyAggregationStrategy())
                 .stopOnException()
                 .parallelProcessing()
@@ -103,8 +98,8 @@ public class EntryRoutes extends RouteBuilder {
                 .choice()
                 .when(or(body().isNull(), bodyAs(List.class).method("isEmpty").isEqualTo(true)))
                 .process(exchange -> {
-                    List<?> digests = exchange.getIn().getHeader("digests", List.class);
-                    exchange.getIn().setHeader("digestsNotFound", digests);
+                    List<?> digests = exchange.getIn().getHeader(digestsHeader, List.class);
+                    exchange.getIn().setHeader(digestsNotFoundHeader, digests);
                 })
                 .otherwise()
                 .setBody(exchange -> {
@@ -116,9 +111,9 @@ public class EntryRoutes extends RouteBuilder {
                             .map(Image::getDigest)
                             .collect(Collectors.toSet());
 
-                    List<?> digests = exchange.getIn().getHeader("digests", List.class);
+                    List<?> digests = exchange.getIn().getHeader(digestsHeader, List.class);
                     List<?> digestsMissing = digests.stream().filter(d -> !digestSet.contains(d)).toList();
-                    exchange.getIn().setHeader("digestsNotFound", digestsMissing);
+                    exchange.getIn().setHeader(digestsNotFoundHeader, digestsMissing);
 
                     Map<String, Vulnerability> vulnerabilityMap = results.stream()
                             .filter(e -> e instanceof Image)
@@ -135,29 +130,29 @@ public class EntryRoutes extends RouteBuilder {
 
         from("direct:checkData")
                 .process(exchange -> {
-                    List<?> digests = exchange.getIn().getHeader("digests", List.class);
-                    List<?> digestsNotFound = exchange.getIn().getHeader("digestsNotFound", List.class);
+                    List<?> digests = exchange.getIn().getHeader(digestsHeader, List.class);
+                    List<?> digestsNotFound = exchange.getIn().getHeader(digestsNotFoundHeader, List.class);
                     if (digestsNotFound == null || digestsNotFound.isEmpty()) {
-                        exchange.getIn().setHeader("scanned", "true");
+                        exchange.getIn().setHeader(scannedHeader, "true");
                     } else if (new HashSet<>(digestsNotFound).containsAll(digests)) {
-                        exchange.getIn().setHeader("scanned", "false");
+                        exchange.getIn().setHeader(scannedHeader, "false");
                     } else {
-                        exchange.getIn().setHeader("scanned", "partial");
+                        exchange.getIn().setHeader(scannedHeader, "partial");
                     }
                 })
                 .choice()
-                .when(header("scanned").isEqualTo("false"))
+                .when(header(scannedHeader).isEqualTo("false"))
                 .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(202))
                 .setHeader(Exchange.CONTENT_TYPE, constant("text/plain"))
                 .setBody(constant("Image scan is in process. Please try again later."))
-                .when(header("scanned").isEqualTo("partial"))
+                .when(header(scannedHeader).isEqualTo("partial"))
                 .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(202))
                 .endChoice();
 
         from("direct:scanImages")
                 .choice()
-                .when(header("digestsNotFound").isNotNull())
-                .split(header("digestsNotFound"))
+                .when(header(digestsNotFoundHeader).isNotNull())
+                .split(header(digestsNotFoundHeader))
                 .parallelProcessing()
                 .process(new ImageDigestProcessor())
                 .to("seda:scanImage?concurrentConsumers=1&waitForTaskToComplete=Never&timeout=0")
