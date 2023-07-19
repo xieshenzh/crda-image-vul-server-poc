@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.camel.Exchange.CONTENT_TYPE;
 import static org.apache.camel.Exchange.HTTP_RESPONSE_CODE;
-import static org.crda.Constants.platformHeader;
+import static org.crda.image.Constants.platformHeader;
 
 public class SkopeoRoutes extends RouteBuilder {
     @Override

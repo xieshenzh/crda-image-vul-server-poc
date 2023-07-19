@@ -3,8 +3,8 @@ package org.crda.image;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 
-import static org.crda.Constants.imageHeader;
-import static org.crda.Constants.imageRegRepoHeader;
+import static org.crda.image.Constants.imageHeader;
+import static org.crda.image.Constants.imageRegRepoHeader;
 
 public class ImageNameProcessor implements Processor {
     @Override

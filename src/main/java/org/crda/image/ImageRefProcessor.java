@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.crda.Constants.imageHeader;
+import static org.crda.image.Constants.imageHeader;
 
 public class ImageRefProcessor implements Processor {
 

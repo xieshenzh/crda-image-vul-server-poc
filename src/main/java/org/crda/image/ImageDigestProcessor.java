@@ -1,9 +1,9 @@
-package org.crda;
+package org.crda.image;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 
-import static org.crda.Constants.imageRegRepoHeader;
+import static org.crda.image.Constants.imageRegRepoHeader;
 
 public class ImageDigestProcessor implements Processor {
     @Override
