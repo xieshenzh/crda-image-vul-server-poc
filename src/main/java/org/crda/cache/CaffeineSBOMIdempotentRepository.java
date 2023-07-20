@@ -15,9 +15,11 @@ public class CaffeineSBOMIdempotentRepository extends CaffeineIdempotentReposito
     @ConfigProperty(name = "camel.component.caffeine-cache.maximum-size", defaultValue = "10000")
     long maximumSize;
 
+    static final String sbomsCacheName = "sbomsIdem";
+
     @Inject
-    public CaffeineSBOMIdempotentRepository(@ConfigProperty(name = "caffeine-cache.SBOM-idempotent-repository-name", defaultValue = "sbomsIdem") String cacheName) {
-        super(cacheName);
+    public CaffeineSBOMIdempotentRepository() {
+        super(sbomsCacheName);
     }
 
     @Override
