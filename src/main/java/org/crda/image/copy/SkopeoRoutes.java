@@ -12,8 +12,12 @@ public class SkopeoRoutes extends RouteBuilder {
                 .logStackTrace(true)
                 .stop();
 
+        //TODO
         from("direct:skopeoCopy")
                 .toD("exec:skopeo?args=copy docker://${header.imageRef} oci:${header.imagePath}:${header.imageRef}")
-                .process(new ExecErrorProcessor());
+                .process(new ExecErrorProcessor())
+                .process(exchange -> {
+                    int i = 0;
+                });
     }
 }

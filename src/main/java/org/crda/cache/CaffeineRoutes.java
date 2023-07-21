@@ -56,14 +56,5 @@ public class CaffeineRoutes extends RouteBuilder {
                 .when(header(CaffeineConstants.ACTION_HAS_RESULT).isEqualTo(false))
                 .setBody(constant((Object) null))
                 .endChoice();
-
-        from("direct:invalidateSBOMIdempotentCache")
-                .setHeader(CaffeineConstants.KEY, header(imageRefHeader))
-                .setHeader(CaffeineConstants.ACTION, constant(CaffeineConstants.ACTION_INVALIDATE))
-                .to("caffeine-cache://sbomsIdem?evictionType=size_based")
-                .choice()
-                .when(header(CaffeineConstants.ACTION_SUCCEEDED).isEqualTo(false))
-                .throwException(RuntimeException.class, "Failed to invalidate cache")
-                .endChoice();
     }
 }

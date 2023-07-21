@@ -6,7 +6,6 @@ import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.processor.aggregate.GroupedMessageAggregationStrategy;
-import org.crda.cache.model.Image;
 import org.crda.image.ImageDigestProcessor;
 
 import java.util.ArrayList;
@@ -38,7 +37,10 @@ public class SBOMRoutes extends RouteBuilder {
         from("direct:getSBOMs")
                 .to("direct:parseImageName")
                 .to("direct:getImageManifests")
-                .to("direct:checkImageFound");
+                .to("direct:checkImageFound")
+                .to("direct:queryImageSBOMs")
+                .to("direct:checkSBOMData")
+                .to("direct:generateImagesSBOM");
 
         from("direct:queryImageSBOMs")
                 .split(body(), new GroupedMessageAggregationStrategy())
@@ -75,11 +77,21 @@ public class SBOMRoutes extends RouteBuilder {
         from("direct:checkSBOMData")
                 .choice()
                 .when(body().isNull())
+                .process(exchange -> {
+                    int i = 0;
+                })
                 .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(202))
                 .setHeader(Exchange.CONTENT_TYPE, constant("text/plain"))
                 .setBody(constant("Image scan is in process. Please try again later."))
                 .when(and(body().isNotNull(), header(imagesExecHeader).isNotNull()))
+                .process(exchange -> {
+                    int i = 0;
+                })
                 .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(202))
+                .otherwise()
+                .process(exchange -> {
+                    int i = 0;
+                })
                 .endChoice();
 
         from("direct:generateImagesSBOM")
@@ -87,15 +99,41 @@ public class SBOMRoutes extends RouteBuilder {
                 .when(header(imagesExecHeader).isNotNull())
                 .split(header(imagesExecHeader))
                 .parallelProcessing()
-                .process(new ImageDigestProcessor())
-                .to("seda:generateSBOM?&waitForTaskToComplete=Never&timeout=0")
+                .setHeader(imageRefHeader, body())
+                .process(exchange -> {
+                    int i = 0;
+                })
+                .to("seda:generateSBOM?waitForTaskToComplete=Never&timeout=0")
                 .end()
                 .endChoice();
 
-        from("seda:generateSBOM?&waitForTaskToComplete=Never&timeout=0")
+        //TODO
+        from("seda:generateSBOM?waitForTaskToComplete=Never&timeout=0")
+                .process(exchange -> {
+                    int i = 0;
+                })
                 .idempotentConsumer(header(imageRefHeader)).idempotentRepository(idempotentRepository)
-                .to("direct:clairReport")
-                .convertBodyTo(Image.class)
-                .to("direct:saveImageVulnerabilities");
+                .process(exchange -> {
+                    int i = 0;
+                })
+                .process(new CreateTempDirectoryProcessor())
+                .process(exchange -> {
+                    int i = 0;
+                })
+                .toD("file:${header.imagePath}")
+                .process(exchange -> {
+                    int i = 0;
+                })
+                .to("direct:skopeoCopy")
+                .to("direct:syft")
+                .to("direct:saveImageSBOM")
+                .process(exchange -> {
+                    int i = 0;
+                })
+                .process(new DeleteTempDirectoryProcessor())
+                .process(exchange -> {
+                    String key = exchange.getIn().getHeader(imageRefHeader, String.class);
+                    idempotentRepository.remove(key);
+                });
     }
 }
