@@ -6,14 +6,16 @@ import jakarta.inject.Inject;
 import org.crda.sbom.SBOMIdempotentRepository;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.util.concurrent.TimeUnit;
+
 @ApplicationScoped
 public class CaffeineSBOMIdempotentRepository extends CaffeineIdempotentRepository implements SBOMIdempotentRepository {
 
-    @ConfigProperty(name = "camel.component.caffeine-cache.initial-capacity", defaultValue = "10000")
-    int initialCapacity;
+    @ConfigProperty(name = "caffeine-cache.sbom.expire-after-write-time", defaultValue = "300")
+    long expireAfterWriteTime;
 
-    @ConfigProperty(name = "camel.component.caffeine-cache.maximum-size", defaultValue = "10000")
-    long maximumSize;
+    @ConfigProperty(name = "caffeine-cache.sbom.expire-after-access-time", defaultValue = "300")
+    long expireAfterAccessTime;
 
     static final String sbomsCacheName = "sbomsIdem";
 
@@ -22,11 +24,10 @@ public class CaffeineSBOMIdempotentRepository extends CaffeineIdempotentReposito
         super(sbomsCacheName);
     }
 
-    //TODO
     @Override
     Caffeine<Object, Object> getCacheBuilder() {
         return Caffeine.newBuilder()
-                .initialCapacity(initialCapacity)
-                .maximumSize(maximumSize);
+                .expireAfterWrite(expireAfterWriteTime, TimeUnit.SECONDS)
+                .expireAfterAccess(expireAfterAccessTime, TimeUnit.SECONDS);
     }
 }

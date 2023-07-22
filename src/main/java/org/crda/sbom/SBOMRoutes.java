@@ -20,6 +20,14 @@ import static org.crda.sbom.Constants.imagesExecHeader;
 @ApplicationScoped
 public class SBOMRoutes extends RouteBuilder {
 
+    private static final int concurrentConsumers;
+
+    static {
+        int numProc = Runtime.getRuntime().availableProcessors();
+        int conProc = (int) Math.ceil(numProc / 2.0);
+        concurrentConsumers = Math.max(conProc, 1);
+    }
+
     public SBOMRoutes() {
     }
 
@@ -77,21 +85,11 @@ public class SBOMRoutes extends RouteBuilder {
         from("direct:checkSBOMData")
                 .choice()
                 .when(body().isNull())
-                .process(exchange -> {
-                    int i = 0;
-                })
                 .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(202))
                 .setHeader(Exchange.CONTENT_TYPE, constant("text/plain"))
                 .setBody(constant("Image scan is in process. Please try again later."))
                 .when(and(body().isNotNull(), header(imagesExecHeader).isNotNull()))
-                .process(exchange -> {
-                    int i = 0;
-                })
                 .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(202))
-                .otherwise()
-                .process(exchange -> {
-                    int i = 0;
-                })
                 .endChoice();
 
         from("direct:generateImagesSBOM")
@@ -100,40 +98,20 @@ public class SBOMRoutes extends RouteBuilder {
                 .split(header(imagesExecHeader))
                 .parallelProcessing()
                 .setHeader(imageRefHeader, body())
-                .process(exchange -> {
-                    int i = 0;
-                })
-                .to("seda:generateSBOM?waitForTaskToComplete=Never&timeout=0")
+                .to("seda:generateSBOM?concurrentConsumers=" + concurrentConsumers + "&waitForTaskToComplete=Never&timeout=0")
                 .end()
                 .endChoice();
 
-        //TODO
-        from("seda:generateSBOM?waitForTaskToComplete=Never&timeout=0")
-                .process(exchange -> {
-                    int i = 0;
-                })
+        from("seda:generateSBOM?concurrentConsumers=" + concurrentConsumers + "&waitForTaskToComplete=Never&timeout=0")
                 .idempotentConsumer(header(imageRefHeader)).idempotentRepository(idempotentRepository)
-                .process(exchange -> {
-                    int i = 0;
-                })
+                .to("direct:generateSBOM");
+
+        from("direct:generateSBOM")
+                .onCompletion().process(new DeleteTempDirectoryProcessor()).end()
                 .process(new CreateTempDirectoryProcessor())
-                .process(exchange -> {
-                    int i = 0;
-                })
                 .toD("file:${header.imagePath}")
-                .process(exchange -> {
-                    int i = 0;
-                })
                 .to("direct:skopeoCopy")
                 .to("direct:syft")
-                .to("direct:saveImageSBOM")
-                .process(exchange -> {
-                    int i = 0;
-                })
-                .process(new DeleteTempDirectoryProcessor())
-                .process(exchange -> {
-                    String key = exchange.getIn().getHeader(imageRefHeader, String.class);
-                    idempotentRepository.remove(key);
-                });
+                .to("direct:saveImageSBOM");
     }
 }

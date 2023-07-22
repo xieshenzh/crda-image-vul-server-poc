@@ -18,16 +18,19 @@ public class DeleteTempDirectoryProcessor implements Processor {
     public void process(Exchange exchange) throws Exception {
         String dir = exchange.getIn().getHeader(imagePathHeader, String.class);
         Path dirPath = Paths.get(dir);
-        try (Stream<Path> stream = Files.walk(dirPath)) {
-            stream.sorted(Comparator.reverseOrder())
-                    .map(Path::toFile)
-                    .forEach(File::delete);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
 
         if (Files.exists(dirPath)) {
-            throw new RuntimeException(String.format("Failed to delete temp directory: %s", dir));
+            try (Stream<Path> stream = Files.walk(dirPath)) {
+                stream.sorted(Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(File::delete);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+
+            if (Files.exists(dirPath)) {
+                throw new RuntimeException(String.format("Failed to delete temp directory: %s", dir));
+            }
         }
     }
 }

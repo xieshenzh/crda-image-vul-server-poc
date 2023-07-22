@@ -22,7 +22,8 @@ public class ImageRoutes extends RouteBuilder {
 
         from("direct:parseImageName")
                 .process(new ImageRefProcessor())
-                .process(new ImageNameProcessor());
+                .process(new ImageNameProcessor())
+                .process(new PlatformProcessor());
 
         from("direct:getImageManifests")
                 .to("direct:skopeoInspectRaw")

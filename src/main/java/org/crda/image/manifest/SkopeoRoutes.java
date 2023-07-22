@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import static org.apache.camel.Exchange.CONTENT_TYPE;
 import static org.apache.camel.Exchange.HTTP_RESPONSE_CODE;
 import static org.crda.image.Constants.platformHeader;
+import static org.crda.image.Constants.supportedPlatforms;
 
 public class SkopeoRoutes extends RouteBuilder {
     @Override
@@ -32,6 +33,16 @@ public class SkopeoRoutes extends RouteBuilder {
                 .json(JsonLibrary.Jackson, Manifest.class)
                 .process(exchange -> {
                     Manifest manifest = exchange.getIn().getBody(Manifest.class);
+                    String platformStr = exchange.getIn().getHeader(platformHeader, String.class);
+                    if (platformStr != null) {
+                        Platform platform = new Platform(platformStr);
+                        Platform imagePlatform = new Platform().os(manifest.getOs()).arch(manifest.getArchitecture());
+                        if (!platform.equals(imagePlatform)) {
+                            exchange.getIn().setBody(null);
+                            return;
+                        }
+                    }
+
                     Optional.ofNullable(manifest.getDigest())
                             .ifPresentOrElse(
                                     d -> exchange.getIn().setBody(Collections.singletonList(d)),
@@ -58,7 +69,9 @@ public class SkopeoRoutes extends RouteBuilder {
                         Optional.ofNullable(manifest.getManifests())
                                 .ifPresentOrElse(
                                         m -> exchange.getIn().setBody(
-                                                m.stream().map(Descriptor::getDigest).collect(Collectors.toList())),
+                                                m.stream()
+                                                        .filter(p -> supportedPlatforms.contains(p.getPlatform()))
+                                                        .map(Descriptor::getDigest).collect(Collectors.toList())),
                                         () -> exchange.getIn().setBody(null));
                     }
                 });

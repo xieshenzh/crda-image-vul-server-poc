@@ -17,9 +17,6 @@ public class SyftRoutes extends RouteBuilder {
         from("direct:syft")
                 .toD("exec:syft?args=oci-dir:${header.imagePath} --scope all-layers -o cyclonedx-json")
                 .process(new ExecErrorProcessor())
-                .process(exchange -> {
-                    int i = 0;
-                })
                 .unmarshal()
                 .json(JsonLibrary.Jackson, JsonNode.class);
     }

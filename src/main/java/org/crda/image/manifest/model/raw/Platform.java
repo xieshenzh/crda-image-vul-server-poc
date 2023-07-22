@@ -23,6 +23,16 @@ public class Platform {
         this.architecture = parts[1];
     }
 
+    public Platform os(String os) {
+        this.os = os;
+        return this;
+    }
+
+    public Platform arch(String arch) {
+        this.architecture = arch;
+        return this;
+    }
+
     public String getArchitecture() {
         return architecture;
     }
