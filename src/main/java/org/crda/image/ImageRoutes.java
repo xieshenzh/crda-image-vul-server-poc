@@ -26,6 +26,7 @@ public class ImageRoutes extends RouteBuilder {
                 .process(new PlatformProcessor());
 
         from("direct:getImageManifests")
+                .process(new BasicAuthProcessor())
                 .to("direct:skopeoInspectRaw")
                 .choice()
                 .when(body().isNull())

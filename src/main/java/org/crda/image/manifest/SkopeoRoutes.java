@@ -15,6 +15,7 @@ import static org.apache.camel.Exchange.CONTENT_TYPE;
 import static org.apache.camel.Exchange.HTTP_RESPONSE_CODE;
 import static org.crda.image.Constants.platformHeader;
 import static org.crda.image.Constants.supportedPlatforms;
+import static org.crda.sbom.Constants.credsHeader;
 
 public class SkopeoRoutes extends RouteBuilder {
     @Override
@@ -27,7 +28,12 @@ public class SkopeoRoutes extends RouteBuilder {
                 .setBody().simple("${exception.message}");
 
         from("direct:skopeoInspect")
+                .choice()
+                .when(header(credsHeader).isNotNull())
+                .toD("exec:skopeo?args=inspect --creds=${header.creds} docker://${header.image}")
+                .otherwise()
                 .toD("exec:skopeo?args=inspect docker://${header.image}")
+                .end()
                 .process(new ExecErrorProcessor())
                 .unmarshal()
                 .json(JsonLibrary.Jackson, Manifest.class)
@@ -50,7 +56,12 @@ public class SkopeoRoutes extends RouteBuilder {
                 });
 
         from("direct:skopeoInspectRaw")
+                .choice()
+                .when(header(credsHeader).isNotNull())
+                .toD("exec:skopeo?args=inspect --raw --creds=${header.creds} docker://${header.image}")
+                .otherwise()
                 .toD("exec:skopeo?args=inspect --raw docker://${header.image}")
+                .end()
                 .process(new ExecErrorProcessor())
                 .unmarshal()
                 .json(JsonLibrary.Jackson, org.crda.image.manifest.model.raw.Manifest.class)

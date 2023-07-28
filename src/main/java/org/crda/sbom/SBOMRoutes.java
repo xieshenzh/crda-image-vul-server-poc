@@ -15,7 +15,7 @@ import static org.apache.camel.Exchange.CONTENT_TYPE;
 import static org.apache.camel.Exchange.HTTP_RESPONSE_CODE;
 import static org.apache.camel.support.builder.PredicateBuilder.and;
 import static org.crda.image.Constants.imageRefHeader;
-import static org.crda.sbom.Constants.imagesExecHeader;
+import static org.crda.sbom.Constants.*;
 
 @ApplicationScoped
 public class SBOMRoutes extends RouteBuilder {
@@ -43,6 +43,7 @@ public class SBOMRoutes extends RouteBuilder {
                 .setBody().simple("${exception.message}");
 
         from("direct:getSBOMs")
+                .setProperty(authProperty, header(authHeader))
                 .to("direct:parseImageName")
                 .to("direct:getImageManifests")
                 .to("direct:checkImageFound")
