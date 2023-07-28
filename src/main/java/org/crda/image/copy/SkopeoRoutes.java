@@ -19,9 +19,9 @@ public class SkopeoRoutes extends RouteBuilder {
                 .process(new BasicAuthProcessor())
                 .choice()
                 .when(header(credsHeader).isNotNull())
-                .toD("exec:skopeo?args=copy --src-creds=${header.creds} docker://${header.imageRef} oci:${header.imagePath}:${header.imageRef}")
+                .toD("exec:skopeo?args=RAW(copy --src-creds=${header.creds} docker://${header.imageRef} oci:${header.imagePath}:${header.imageRef})")
                 .otherwise()
-                .toD("exec:skopeo?args=copy docker://${header.imageRef} oci:${header.imagePath}:${header.imageRef}")
+                .toD("exec:skopeo?args=RAW(copy docker://${header.imageRef} oci:${header.imagePath}:${header.imageRef})")
                 .end()
                 .process(new ExecErrorProcessor());
     }
