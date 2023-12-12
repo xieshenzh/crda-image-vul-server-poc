@@ -83,6 +83,6 @@ public abstract class CaffeineIdempotentRepository extends ServiceSupport implem
     protected void doStop() throws Exception {
     }
 
-    abstract Caffeine<Object, Object> getCacheBuilder();
+    protected abstract Caffeine<Object, Object> getCacheBuilder();
 }
 

@@ -25,7 +25,7 @@ public class CaffeineSBOMIdempotentRepository extends CaffeineIdempotentReposito
     }
 
     @Override
-    Caffeine<Object, Object> getCacheBuilder() {
+    protected Caffeine<Object, Object> getCacheBuilder() {
         return Caffeine.newBuilder()
                 .expireAfterWrite(expireAfterWriteTime, TimeUnit.SECONDS)
                 .expireAfterAccess(expireAfterAccessTime, TimeUnit.SECONDS);

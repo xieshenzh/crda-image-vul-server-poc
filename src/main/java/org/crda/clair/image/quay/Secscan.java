@@ -1,4 +1,4 @@
-package org.crda.image.vulnerability.model.quay;
+package org.crda.clair.image.quay;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

@@ -17,11 +17,11 @@ public class EntryRoutes extends RouteBuilder {
                 .bindingMode(RestBindingMode.json)
                 .clientRequestValidation(true);
 
-        rest("/vulnerabilities")
+        rest("/clair/vulnerabilities")
                 .get()
                 .param().name("image").type(RestParamType.query).required(true).description("Image reference").endParam()
                 .param().name("platform").type(RestParamType.query).required(false).description("Image platform").endParam()
-                .to("direct:getVulnerabilities");
+                .to("direct:getClairVulnerabilities");
 
         rest("/sboms")
                 .get()

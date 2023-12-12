@@ -1,9 +1,9 @@
-package org.crda.image.vulnerability;
+package org.crda.clair.image;
 
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.crda.exec.ExecErrorProcessor;
-import org.crda.image.vulnerability.model.quay.Secscan;
+import org.crda.clair.image.quay.Secscan;
 
 public class ClairRoutes extends RouteBuilder {
     @Override

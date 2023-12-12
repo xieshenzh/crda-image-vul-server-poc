@@ -19,5 +19,12 @@ public class SyftRoutes extends RouteBuilder {
                 .process(new ExecErrorProcessor())
                 .unmarshal()
                 .json(JsonLibrary.Jackson, JsonNode.class);
+
+        // Not support passing credentials per request
+        from("direct:syft-registry")
+                .toD("exec:syft?args=RAW(registry:${header.imageRef} --scope all-layers -o cyclonedx-json)")
+                .process(new ExecErrorProcessor())
+                .unmarshal()
+                .json(JsonLibrary.Jackson, JsonNode.class);
     }
 }

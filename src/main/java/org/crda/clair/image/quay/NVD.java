@@ -1,4 +1,4 @@
-package org.crda.image.vulnerability.model.quay;
+package org.crda.clair.image.quay;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -13,11 +13,11 @@ public class NVD {
     public NVD() {
     }
 
-    public org.crda.image.vulnerability.model.quay.CVSSv3 getCVSSv3() {
+    public org.crda.clair.image.quay.CVSSv3 getCVSSv3() {
         return CVSSv3;
     }
 
-    public void setCVSSv3(org.crda.image.vulnerability.model.quay.CVSSv3 CVSSv3) {
+    public void setCVSSv3(org.crda.clair.image.quay.CVSSv3 CVSSv3) {
         this.CVSSv3 = CVSSv3;
     }
 }

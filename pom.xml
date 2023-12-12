@@ -163,26 +163,6 @@
                     </execution>
                 </executions>
             </plugin>
-<!--            <plugin>-->
-<!--                <groupId>com.googlecode.maven-download-plugin</groupId>-->
-<!--                <artifactId>download-maven-plugin</artifactId>-->
-<!--                <version>1.6.8</version>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>download-regctl</id>-->
-<!--                        <phase>process-resources</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>wget</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--                <configuration>-->
-<!--                    <url>https://github.com/regclient/regclient/releases/latest/download/regctl-${os.name}-${os.arch}</url>-->
-<!--                    <unpack>false</unpack>-->
-<!--                    <outputFileName>regctl</outputFileName>-->
-<!--                    <outputDirectory>${project.build.directory}/regclient</outputDirectory>-->
-<!--                </configuration>-->
-<!--            </plugin>-->
         </plugins>
     </build>
     <profiles>

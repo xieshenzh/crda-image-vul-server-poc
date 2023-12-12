@@ -1,4 +1,4 @@
-package org.crda.cache.model;
+package org.crda.clair.cache.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.quarkus.runtime.annotations.RegisterForReflection;

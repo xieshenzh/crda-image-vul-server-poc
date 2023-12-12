@@ -1,4 +1,4 @@
-package org.crda.image.vulnerability.model.quay;
+package org.crda.clair.image.quay;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -58,11 +58,11 @@ public class Metadata {
         this.distroVersion = distroVersion;
     }
 
-    public org.crda.image.vulnerability.model.quay.NVD getNVD() {
+    public org.crda.clair.image.quay.NVD getNVD() {
         return NVD;
     }
 
-    public void setNVD(org.crda.image.vulnerability.model.quay.NVD NVD) {
+    public void setNVD(org.crda.clair.image.quay.NVD NVD) {
         this.NVD = NVD;
     }
 }
