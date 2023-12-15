@@ -3,10 +3,7 @@ package org.crda.exhort;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.model.dataformat.JsonLibrary;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-
-import java.io.InputStream;
 
 @ApplicationScoped
 public class ExhortRoutes extends RouteBuilder {
