@@ -1,7 +1,10 @@
 package org.crda.sbom.cyclone;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
 import com.github.packageurl.MalformedPackageURLException;
 import com.github.packageurl.PackageURL;
@@ -17,6 +20,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.apache.camel.builder.endpoint.StaticEndpointBuilders.direct;
+import static org.crda.image.Constants.imageRefHeader;
 
 @ApplicationScoped
 public class CycloneRoutes extends RouteBuilder {
@@ -43,8 +49,15 @@ public class CycloneRoutes extends RouteBuilder {
 
     @Override
     public void configure() throws Exception {
+        from(direct("setPurl"))
+                .process(exchange -> {
+                    String imageRef = exchange.getIn().getHeader(imageRefHeader, String.class);
+                    ObjectNode node = exchange.getIn().getBody(ObjectNode.class);
+                    ((ObjectNode) node.get("metadata").get("component"))
+                            .set("purl", new TextNode(String.format("pkg:oci/%s", imageRef)));
+                });
 
-        from("direct:splitSBOM")
+        from(direct("splitSBOM"))
                 .process(exchange -> {
                     JsonNode node = exchange.getIn().getBody(JsonNode.class);
 
@@ -56,7 +69,7 @@ public class CycloneRoutes extends RouteBuilder {
                             .stream()
                             .map(c -> {
                                 try {
-                                    return new PackageURL(c.getPurl()).getType();
+                                    return c.getPurl() == null ? null : new PackageURL(c.getPurl()).getType();
                                 } catch (MalformedPackageURLException e) {
                                     LOGGER.warn("Failed to parse component purl {} in SBOM", c.getPurl());
                                     // Ignore this component if its purl is not valid
@@ -81,7 +94,7 @@ public class CycloneRoutes extends RouteBuilder {
                                                 .stream()
                                                 .filter(c -> {
                                                     try {
-                                                        return t.equals(new PackageURL(c.getPurl()).getType());
+                                                        return c.getPurl() != null && t.equals(new PackageURL(c.getPurl()).getType());
                                                     } catch (MalformedPackageURLException e) {
                                                         LOGGER.warn("Failed to parse component purl {} in SBOM", c.getPurl());
                                                         // Ignore this component if its purl is not valid
@@ -96,7 +109,7 @@ public class CycloneRoutes extends RouteBuilder {
                                                 .stream()
                                                 .filter(d -> {
                                                     try {
-                                                        return t.equals(new PackageURL(d.getRef()).getType());
+                                                        return d.getRef() != null && t.equals(new PackageURL(d.getRef()).getType());
                                                     } catch (MalformedPackageURLException e) {
                                                         LOGGER.warn("Failed to parse dependency purl {} in SBOM", d.getRef());
                                                         // Ignore this component if its purl is not valid
@@ -111,6 +124,18 @@ public class CycloneRoutes extends RouteBuilder {
                             .toList();
 
                     exchange.getIn().setBody(boms);
+                });
+
+        from(direct("convertSBOMToPayload"))
+                .process(exchange -> {
+                    Bom bom = exchange.getIn().getBody(Bom.class);
+                    try {
+                        String payload = mapper.writeValueAsString(bom);
+                        exchange.getIn().setBody(payload);
+                    } catch (JsonProcessingException e) {
+                        LOGGER.warn("Failed to convert SBOM {} to payload", bom);
+                        exchange.getIn().setBody(null);
+                    }
                 });
     }
 }

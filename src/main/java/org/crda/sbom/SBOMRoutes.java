@@ -13,6 +13,7 @@ import java.util.List;
 
 import static org.apache.camel.Exchange.CONTENT_TYPE;
 import static org.apache.camel.Exchange.HTTP_RESPONSE_CODE;
+import static org.apache.camel.builder.endpoint.StaticEndpointBuilders.*;
 import static org.apache.camel.support.builder.PredicateBuilder.and;
 import static org.crda.image.Constants.imageRefHeader;
 import static org.crda.sbom.Constants.*;
@@ -42,21 +43,21 @@ public class SBOMRoutes extends RouteBuilder {
                 .setHeader(CONTENT_TYPE, constant("text/plain"))
                 .setBody().simple("${exception.message}");
 
-        from("direct:getSBOMs")
+        from(direct("getSBOMs"))
                 .setProperty(authProperty, header(authHeader))
-                .to("direct:parseImageName")
-                .to("direct:getImageManifests")
-                .to("direct:checkImageFound")
-                .to("direct:queryImageSBOMs")
-                .to("direct:checkSBOMData")
-                .to("direct:generateImagesSBOM");
+                .to(direct("parseImageName"))
+                .to(direct("getImageManifests"))
+                .to(direct("checkImageFound"))
+                .to(direct("queryImageSBOMs"))
+                .to(direct("checkSBOMData"))
+                .to(direct("generateImagesSBOM"));
 
-        from("direct:queryImageSBOMs")
+        from(direct("queryImageSBOMs"))
                 .split(body(), new GroupedMessageAggregationStrategy())
                 .stopOnException()
                 .parallelProcessing()
                 .process(new ImageDigestProcessor())
-                .to("direct:findImageSBOM")
+                .to(direct("findImageSBOM"))
                 .end()
                 .process(exchange -> {
                     List<?> messages = exchange.getIn().getBody(List.class);
@@ -83,36 +84,36 @@ public class SBOMRoutes extends RouteBuilder {
                     }
                 });
 
-        from("direct:checkSBOMData")
+        from(direct("checkSBOMData"))
                 .choice()
                 .when(body().isNull())
                 .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(202))
                 .setHeader(Exchange.CONTENT_TYPE, constant("text/plain"))
-                .setBody(constant("Image scan is in process. Please try again later."))
+//TODO                .setBody(constant("Image scan is in process. Please try again later."))
                 .when(and(body().isNotNull(), header(imagesExecHeader).isNotNull()))
                 .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(202))
                 .endChoice();
 
-        from("direct:generateImagesSBOM")
+        from(direct("generateImagesSBOM"))
                 .choice()
                 .when(header(imagesExecHeader).isNotNull())
                 .split(header(imagesExecHeader))
                 .parallelProcessing()
                 .setHeader(imageRefHeader, body())
-                .to("seda:generateSBOM?concurrentConsumers=" + concurrentConsumers + "&waitForTaskToComplete=Never&timeout=0")
+                .to(seda("generateSBOM?concurrentConsumers=" + concurrentConsumers + "&waitForTaskToComplete=Never&timeout=0"))
                 .end()
                 .endChoice();
 
-        from("seda:generateSBOM?concurrentConsumers=" + concurrentConsumers + "&waitForTaskToComplete=Never&timeout=0")
+        from(seda("generateSBOM?concurrentConsumers=" + concurrentConsumers + "&waitForTaskToComplete=Never&timeout=0"))
                 .idempotentConsumer(header(imageRefHeader)).idempotentRepository(idempotentRepository)
-                .to("direct:generateSBOM");
+                .to(direct("generateSBOM"));
 
-        from("direct:generateSBOM")
+        from(direct("generateSBOM"))
                 .onCompletion().process(new DeleteTempDirectoryProcessor()).end()
                 .process(new CreateTempDirectoryProcessor())
-                .toD("file:${header.imagePath}")
-                .to("direct:skopeoCopy")
-                .to("direct:syft")
-                .to("direct:saveImageSBOM");
+                .toD(file("${header.imagePath}"))
+                .to(direct("skopeoCopy"))
+                .to(direct("syft"))
+                .to(direct("saveImageSBOM"));
     }
 }

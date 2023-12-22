@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import static org.apache.camel.Exchange.CONTENT_TYPE;
 import static org.apache.camel.Exchange.HTTP_RESPONSE_CODE;
+import static org.apache.camel.builder.endpoint.StaticEndpointBuilders.direct;
 import static org.apache.camel.support.builder.PredicateBuilder.or;
 import static org.crda.image.Constants.*;
 
@@ -20,20 +21,20 @@ public class ImageRoutes extends RouteBuilder {
                 .handled(true)
                 .setBody().simple("${exception.message}");
 
-        from("direct:parseImageName")
+        from(direct("parseImageName"))
                 .process(new ImageRefProcessor())
                 .process(new ImageNameProcessor())
                 .process(new PlatformProcessor());
 
-        from("direct:getImageManifests")
+        from(direct("getImageManifests"))
                 .process(new BasicAuthProcessor())
-                .to("direct:skopeoInspectRaw")
+                .to(direct("skopeoInspectRaw"))
                 .choice()
                 .when(body().isNull())
-                .to("direct:skopeoInspect")
+                .to(direct("skopeoInspect"))
                 .endChoice();
 
-        from("direct:checkImageFound")
+        from(direct("checkImageFound"))
                 .choice()
                 .when(or(body().isNull(), bodyAs(List.class).method("isEmpty").isEqualTo(true)))
                 .process(exchange -> {

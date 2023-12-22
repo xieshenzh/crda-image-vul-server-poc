@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 
 import static org.apache.camel.Exchange.CONTENT_TYPE;
 import static org.apache.camel.Exchange.HTTP_RESPONSE_CODE;
+import static org.apache.camel.builder.endpoint.StaticEndpointBuilders.direct;
+import static org.apache.camel.builder.endpoint.StaticEndpointBuilders.exec;
 import static org.crda.image.Constants.platformHeader;
 import static org.crda.image.Constants.supportedPlatforms;
 import static org.crda.sbom.Constants.credsHeader;
@@ -27,12 +29,12 @@ public class SkopeoRoutes extends RouteBuilder {
                 .setHeader(CONTENT_TYPE, constant("text/plain"))
                 .setBody().simple("${exception.message}");
 
-        from("direct:skopeoInspect")
+        from(direct("skopeoInspect"))
                 .choice()
                 .when(header(credsHeader).isNotNull())
-                .toD("exec:skopeo?args=RAW(inspect --creds=${header.creds} docker://${header.image})")
+                .toD(exec("skopeo?args=RAW(inspect --creds=${header.creds} docker://${header.image})"))
                 .otherwise()
-                .toD("exec:skopeo?args=RAW(inspect docker://${header.image})")
+                .toD(exec("skopeo?args=RAW(inspect docker://${header.image})"))
                 .end()
                 .process(new ExecErrorProcessor())
                 .unmarshal()
@@ -55,12 +57,12 @@ public class SkopeoRoutes extends RouteBuilder {
                                     () -> exchange.getIn().setBody(null));
                 });
 
-        from("direct:skopeoInspectRaw")
+        from(direct("skopeoInspectRaw"))
                 .choice()
                 .when(header(credsHeader).isNotNull())
-                .toD("exec:skopeo?args=RAW(inspect --raw --creds=${header.creds} docker://${header.image})")
+                .toD(exec("skopeo?args=RAW(inspect --raw --creds=${header.creds} docker://${header.image})"))
                 .otherwise()
-                .toD("exec:skopeo?args=RAW(inspect --raw docker://${header.image})")
+                .toD(exec("skopeo?args=RAW(inspect --raw docker://${header.image})"))
                 .end()
                 .process(new ExecErrorProcessor())
                 .unmarshal()
