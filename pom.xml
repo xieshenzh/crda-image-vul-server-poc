@@ -15,6 +15,7 @@
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>3.2.0.Final</quarkus.platform.version>
         <cyclonedx.version>8.0.3</cyclonedx.version>
+        <exhort-api.version>1.0.4</exhort-api.version>
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.0.0</surefire-plugin.version>
     </properties>
@@ -74,6 +75,11 @@
             <artifactId>camel-quarkus-vertx-http</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.redhat.ecosystemappeng</groupId>
+            <artifactId>exhort-api-spec</artifactId>
+            <version>${exhort-api.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc</artifactId>
         </dependency>
@@ -103,6 +109,16 @@
             </snapshots>
             <id>redhat</id>
             <url>https://maven.repository.redhat.com/ga</url>
+        </repository>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/RHEcosystemAppEng/exhort-api-spec</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
         </repository>
     </repositories>
     <pluginRepositories>

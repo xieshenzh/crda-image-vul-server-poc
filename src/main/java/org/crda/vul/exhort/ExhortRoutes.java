@@ -1,5 +1,6 @@
 package org.crda.vul.exhort;
 
+import com.redhat.exhort.api.v4.AnalysisReport;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -41,6 +42,6 @@ public class ExhortRoutes extends RouteBuilder {
                 .setHeader("rhda-operation-type", constant("Component Analysis"))
                 .to(vertxHttp(String.format("%s/api/v4/analysis", exhortBackendUrl)))
                 .unmarshal()
-                .json(JsonLibrary.Jackson);
+                .json(JsonLibrary.Jackson, AnalysisReport.class);
     }
 }
